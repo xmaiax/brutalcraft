@@ -1,0 +1,7 @@
+.settings/
+*.log
+RELEASE/
+target/
+.classpath
+.project
+openjdk-cache/
