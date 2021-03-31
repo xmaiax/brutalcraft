@@ -142,6 +142,7 @@ open class App(
       if (this.videoSettings.fullscreen) glfwGetPrimaryMonitor() else NULL, NULL
     )
     if (this.window == NULL) throw App.exitWithError("Failed to create the GLFW window")
+    glfwSetInputMode(this.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
     glfwSetKeyCallback(this.window, org.lwjgl.glfw.GLFWKeyCallbackI(
       fun(window: Long, key: Int, _: Int, action: Int, _: Int) {
         this.renderer2D.window = window
