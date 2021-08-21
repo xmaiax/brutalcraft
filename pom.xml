@@ -16,7 +16,7 @@
     <maintainer.email>felipe_m92@live.com</maintainer.email>
     <main.class>${project.groupId}.App</main.class>
     <output.directory>RELEASE/</output.directory>
-    <logging-pattern>[%-5p] %d{dd/MM/yyyy HH:mm:ss} %32c &lt;%3L&gt; %msg%n</logging-pattern>
+    <logging-pattern>[%-4p] %d{dd/MM/yyyy HH:mm:ss} %32c &lt;%3L&gt; %msg%n</logging-pattern>
     <kotlin.version>1.3.61</kotlin.version>
     <spring-boot.version>2.2.4.RELEASE</spring-boot.version>
     <lwjgl.version>3.2.3</lwjgl.version>
