@@ -3,24 +3,36 @@ package com.github.xmaiax
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30C.*
 
-data class Dimension(var width: Int, var height: Int)
 data class Position(var x: Int = 0, var y: Int = 0)
-data class Texture2D(val resource: String) {
+data class Dimension(val width: Int = -1, val height: Int = -1) {
+  fun isValid() = this.width > 0 && this.height > 0
+}
+interface RenderableObject {
+  fun load(): Unit
+  fun getDimension(): Dimension
+  fun bind(): Unit
+  fun free(): Unit
+}
+
+data class Texture2D(val resource: String): RenderableObject {
+  companion object {
+    val LOAD_TEXTURE_FIRST_ERROR_MESSAGE = "Please load the texture before using it."
+  }
   private var glIdentifier = 0
-  val dimension = Dimension(-1, -1)
+  private var dimension = Dimension()
   private var data: java.nio.ByteBuffer? = null
-  fun load() {
+  override fun load() {
     this.glIdentifier = glGenTextures()
     val widthBuffer = BufferUtils.createIntBuffer(1)
     val heightBuffer = BufferUtils.createIntBuffer(1)
     this.data = org.lwjgl.stb.STBImage.stbi_load_from_memory(
       App.getBufferFromResource(this.resource),
       widthBuffer, heightBuffer, BufferUtils.createIntBuffer(1), 4)
-    this.dimension.width = widthBuffer.get()
-    this.dimension.height = heightBuffer.get()
+    this.dimension = Dimension(widthBuffer.get(), heightBuffer.get())
   }
-  fun free() = this.data?.let { org.lwjgl.stb.STBImage.stbi_image_free(it) }
-  fun bind() = this.data?.let {
+  override fun getDimension() = if(this.dimension.isValid()) this.dimension
+    else throw App.exitWithError(LOAD_TEXTURE_FIRST_ERROR_MESSAGE)
+  override fun bind() = this.data?.let {
     glBindTexture(GL_TEXTURE_2D, this.glIdentifier)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
@@ -28,122 +40,10 @@ data class Texture2D(val resource: String) {
       GL_TEXTURE_2D, 0, GL_RGBA, this.dimension.width, this.dimension.height,
       0, GL_RGBA, GL_UNSIGNED_BYTE, it)
   } ?: run {
-    throw App.exitWithError("Please load the texture before binding.")
+    throw App.exitWithError(LOAD_TEXTURE_FIRST_ERROR_MESSAGE)
   }
-}
-
-data class AnimationIndex(var index: Int = 0, var msUntilNextFrame: Long = 0,
-  var lastAnimation: AnimationIdentifier = AnimationIdentifier.values().first())
-data class Animation2D(val directory: String, val framesPerSecond: Int) {
-  companion object {
-    val JAR_FILE_ENTRY_PREFFIX_URL = "BOOT-INF/classes/"
-  }
-  private var textures2D: List<Texture2D> = listOf()
-  private var lastTimestamp = java.util.Calendar.getInstance().getTimeInMillis()
-  private val resetMsUntilNextFrame = 1000L / this.framesPerSecond
-  val dimension = Dimension(-1, -1)
-  fun load() {
-    Thread.currentThread().getContextClassLoader()
-        .getResource(this.directory)?.let { url ->
-      fun loadAllTexturesWithFileNames(files: List<String>) {
-        this.textures2D = files.map { Texture2D("${this.directory}${it}") }
-        this.textures2D.forEach { it.load() }
-      }
-      val dir = java.io.File(url.getFile())
-      if(dir.isDirectory()) loadAllTexturesWithFileNames(
-        dir.listFiles().map { it.getName() })
-      else {
-        val zipIS = java.util.zip.ZipInputStream(App::class.java.getProtectionDomain()
-          .getCodeSource().getLocation().openStream())
-        val files = mutableListOf<String>()
-        while(true) if(zipIS.getNextEntry()?.let { entry ->
-          files.add(entry.getName())
-          false
-        } ?: run { true }) break
-        loadAllTexturesWithFileNames(files.filter {
-          it.startsWith(JAR_FILE_ENTRY_PREFFIX_URL + this.directory) && !it.endsWith("/") }.map {
-            it.substring(JAR_FILE_ENTRY_PREFFIX_URL.length).split("/").last() })
-      }
-      this.dimension.width = this.textures2D.first().dimension.width
-      this.dimension.height = this.textures2D.first().dimension.height
-    } ?: run {
-      throw App.exitWithError("Unable to load animation directory: ${this.directory}")
-    }
-  }
-  fun free() = this.textures2D.forEach { it.free() }
-  fun bind(animationIndex: AnimationIndex) {
-    if(animationIndex.index > -1 && this.textures2D.isNotEmpty()) {
-      this.textures2D.get(animationIndex.index).bind()
-      animationIndex.msUntilNextFrame -= java.util.Calendar.getInstance().getTimeInMillis() - this.lastTimestamp
-      if(animationIndex.msUntilNextFrame < 1) {
-        animationIndex.msUntilNextFrame = this.resetMsUntilNextFrame.toLong()
-        if(animationIndex.index < this.textures2D.size - 1) animationIndex.index++
-        else animationIndex.index = 0
-      }
-      this.lastTimestamp = java.util.Calendar.getInstance().getTimeInMillis()
-    }
-    else throw App.exitWithError("Please load the animation before binding.")
-  }
-}
-
-enum class AnimationIdentifier(val description: String) {
-  IDLE("idle"),
-  RUN("run"),
-  LIGHT_ATTACK("light-attack"),
-  HEAVY_ATTACK("heavy-attack"),
-  JUMP("jump"),
-  FALL("fall"),
-  DAMAGE("damage"),
-  DEATH("death"),
-  ; override fun toString() = this.description
-}
-
-open class UniqueAnimation(val species: String, val _class: String,
-  val animationsFPS: Map<AnimationIdentifier, Int>,
-  val horizontalInvertFactor: Int = 1, val _scale: Double = 1.0, val _centered: Boolean = true) {
-  private val animations = mutableMapOf<AnimationIdentifier, Animation2D>()
-  private var mirroredDiff = -1
-  fun load() {
-    this.animationsFPS.map { animationFPS ->
-      val animation = Animation2D(Renderer2D.TEXTURES_RELATIVE_PATH_PREFFIX +
-        "${this.species}/${this._class}/${animationFPS.key}/", animationFPS.value)
-      animation.load()
-      this.animations.put(animationFPS.key, animation)
-    }
-    this.mirroredDiff = (this.dimension(this.animations.toList().first().component1())
-      .width.toDouble() * this._scale).toInt() / this.horizontalInvertFactor
-  }
-  fun free() = this.animations.forEach { it.value.free() }
-  fun dimension(identifier: AnimationIdentifier) = this.animations.get(identifier)?.let {
-    it.dimension } ?: run { Dimension(-1, -1) }
-  fun render(renderer: Renderer2D, position: Position, animationIdentifier: AnimationIdentifier,
-    animationIndex: AnimationIndex, horizontalInvert: Boolean = false,
-      alpha: Double = 1.0) = this.animations.get(animationIdentifier)?.let { currentAnimation ->
-    if(animationIndex.lastAnimation != animationIdentifier) {
-      animationIndex.index = 0
-      animationIndex.msUntilNextFrame = 0L
-    }
-    animationIndex.lastAnimation = animationIdentifier
-    currentAnimation.bind(animationIndex)
-    renderer.render2DQuad(if(this._centered) Position(position.x + (
-      if(horizontalInvert) (this.dimension(animationIdentifier).width.toDouble() * this._scale).toInt() / 16 else 0
-    ) -((currentAnimation.dimension.width * this._scale).toInt() / 2),
-      position.y - ((currentAnimation.dimension.height * this._scale).toInt() / 2)
-    ) else position, currentAnimation.dimension, this._scale, horizontalInvert, alpha)
-  }
-}
-
-open class RenderableEntity(
-  val animation: UniqueAnimation,
-  val animationIndex: AnimationIndex = AnimationIndex(),
-  val position: Position = Position(),
-  var horizontalInvert: Boolean = false,
-  var isMoving: Boolean = false,
-  var onTheFloor: Boolean = true,
-  var isFalling: Boolean = false) {
-    fun render(renderer: Renderer2D, animationIdentifier: AnimationIdentifier,
-      alpha: Double = 1.0) = this.animation.render(renderer, this.position,
-        animationIdentifier, this.animationIndex, this.horizontalInvert, alpha)
+  override fun free(): Unit = this.data?.let {
+    org.lwjgl.stb.STBImage.stbi_image_free(it) } ?: run { Unit }
 }
 
 @org.springframework.stereotype.Component
@@ -153,8 +53,7 @@ class Renderer2D(
 ) {
   companion object {
     private val LOGGER = org.slf4j.LoggerFactory.getLogger(Renderer2D::class.java)
-    val TEXTURES_RELATIVE_PATH_PREFFIX = "textures/"
-    val SHADER_ERROR_MESSAGE = "Could not compile shader"
+    val SHADER_ERROR_MESSAGE = "Couldn't compile shader"
   }
   var window = -1L
   private var program = -1
@@ -188,7 +87,7 @@ class Renderer2D(
     val linked = glGetProgrami(this.program, GL_LINK_STATUS)
     val programInfoLog = glGetProgramInfoLog(this.program)
     if (programInfoLog.isNotBlank()) LOGGER.warn(programInfoLog)
-    if (linked == 0) throw App.exitWithError("Could not link program")
+    if (linked == 0) throw App.exitWithError("Couldn't link program")
     glUseProgram(this.program)
     val texLocation = glGetUniformLocation(this.program, "_texture")
     glUniform1i(texLocation, 0)
@@ -205,8 +104,8 @@ class Renderer2D(
     glVertexAttribPointer(programAttributeLocation, 2, GL_FLOAT, true, 0, 0L);
     glEnableVertexAttribArray(programAttributeLocation)
   }
-  fun render2DQuad(position: Position, dimension: Dimension,
-      scale: Double, horizontalInvert: Boolean, alpha: Double) {
+  fun render2DQuad(position: Position, dimension: Dimension, scale: Double = 1.0,
+      horizontalInvert: Boolean = false, alpha: Double = 1.0) {
     glBindVertexArray(glGenVertexArrays())
     val sizeX = (dimension.width.toDouble() * 2.0 * scale.toDouble() /
       this.videoSettings.width.toDouble()).toFloat()

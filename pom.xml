@@ -6,9 +6,9 @@
   <groupId>com.github.xmaiax</groupId>
   <artifactId>brutalcraft</artifactId>
   <packaging>jar</packaging>
-  <version>mk-i</version>
+  <version>mk-ii</version>
   <name>Brutalcraft</name>
-  <description>Simple 2D platformer game engine powered by Kotlin + LWJGL3 + Spring-Boot.</description>
+  <description>Simple game engine powered by Kotlin + LWJGL3 + Spring-Boot.</description>
   <properties>
     <jdk.version>1.8</jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

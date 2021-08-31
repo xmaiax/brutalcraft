@@ -17,6 +17,7 @@ open class VideoSettings(
 ) {
   companion object {
     val OPENGL_VERSION = "3.0"
+    var STATIC_GAME_NAME = ""
   }
 }
 
@@ -79,7 +80,11 @@ open class App(
     fun exitWithError(message: String): Exception {
       LOGGER.error(message)
       LOGGER.error("Forcing exit with error...")
-      System.exit(-1)
+      javax.swing.JOptionPane.showConfirmDialog(null,
+        "Sorry, an unspecified error occurred.\n${message}${
+          if(LOGGER.isDebugEnabled()) "\n\nCheck the logs for more information."
+          else ""}\n\nClick OK to terminate the program.", VideoSettings.STATIC_GAME_NAME,
+          javax.swing.JOptionPane.DEFAULT_OPTION, javax.swing.JOptionPane.ERROR_MESSAGE)
       return Exception(message)
     }
     fun getBufferFromResource(resource: String): java.nio.ByteBuffer =
@@ -123,6 +128,7 @@ open class App(
   private var window: Long = -1
   private val pressedKeys = mutableListOf<InputedAction>()
   override fun run(vararg args: String) {
+    VideoSettings.STATIC_GAME_NAME = "${this.videoSettings.title}"
     LOGGER.info("${this.videoSettings.title}: ${this.appInfo.welcomeMessage}")
     LOGGER.info("Release version: ${this.appInfo.releaseVersion}")
     LOGGER.info("Kotlin version: ${this.appInfo.kotlinVersion}")
@@ -179,7 +185,7 @@ open class App(
       getFloatColorValue(this.videoSettings.clearColor.get(3), this.videoSettings.clearColor.get(4)),
       getFloatColorValue(this.videoSettings.clearColor.get(5), this.videoSettings.clearColor.get(6)),
       java.math.BigDecimal.ZERO.toFloat())
-    LOGGER.info("Engine is running.")
+    LOGGER.info("Engine is running!!")
     var currentMs = java.util.Calendar.getInstance().getTimeInMillis()
     var previousPressedControllerKeys = listOf<InputedControllerKey>()
     while (keepRunning) {
