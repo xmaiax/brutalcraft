@@ -1,26 +1,94 @@
 package com.github.xmaiax
 
+import java.awt.Font
+import java.awt.RenderingHints
+import java.awt.image.BufferedImage
+import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30C.*
 
 data class Position(var x: Int = 0, var y: Int = 0)
 data class Dimension(val width: Int = -1, val height: Int = -1) {
   fun isValid() = this.width > 0 && this.height > 0
+  fun scaleUp(scale: Double) = Dimension(
+    (this.width.toDouble() * scale).toInt(),
+    (this.height.toDouble() * scale).toInt())
 }
+
 interface RenderableObject {
+  companion object {
+    val LOAD_RESOURCE_BEFORE_USING = "Please load the resource before using it."
+  }
+  var glIdentifier: Int
+  var data: java.nio.ByteBuffer?
+  var dimension: Dimension
   fun load(): Unit
-  fun getDimension(): Dimension
-  fun bind(): Unit
-  fun free(): Unit
+  fun getDimension(scale: Double? = null) = if(this.dimension.isValid())
+      scale?.let { this.dimension.scaleUp(it) } ?: run { this.dimension }
+    else this.throwResourceNotLoadedException()
+  fun bind() = this.data?.let {
+    glBindTexture(GL_TEXTURE_2D, this.glIdentifier)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexImage2D(
+      GL_TEXTURE_2D, 0, GL_RGBA, this.dimension.width, this.dimension.height,
+      0, GL_RGBA, GL_UNSIGNED_BYTE, it)
+  } ?: run { this.throwResourceNotLoadedException() }
+  fun free(): Unit = this.data?.let {
+    org.lwjgl.stb.STBImage.stbi_image_free(it) } ?: run { Unit }
+  fun throwResourceNotLoadedException(): Nothing = throw App.exitWithError(
+    RenderableObject.LOAD_RESOURCE_BEFORE_USING)
+}
+
+data class TrueTypeFont(val resource: String): RenderableObject {
+  override var glIdentifier: Int = -1
+  override var data: java.nio.ByteBuffer? = null
+  override var dimension = Dimension()
+  private var font: Font? = null
+  override fun load() {
+    this.font = Font.createFont(Font.TRUETYPE_FONT,
+      App.getUrlFromResource(this.resource).openStream())
+  }
+  fun bakeText(text: String, fontSize: Float, color: java.awt.Color) {
+    var input = BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
+    var graphics2d = input.createGraphics()
+    fun setFontSize() = this.font?.let {
+      graphics2d.setFont(it.deriveFont(Font.PLAIN, fontSize)) } ?: run {
+        super.throwResourceNotLoadedException()
+      }
+    setFontSize()
+    var metrics = graphics2d.getFontMetrics()
+    this.dimension = Dimension(metrics.stringWidth(text), metrics.getHeight())
+    graphics2d.dispose()
+    input = BufferedImage((this.dimension.width.toDouble() * 1.0).toInt(),
+      this.dimension.height, BufferedImage.TYPE_INT_ARGB)
+    graphics2d = input.createGraphics()
+    graphics2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY)
+    graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+    graphics2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY)
+    graphics2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE)
+    graphics2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
+    graphics2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+    graphics2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+    graphics2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE)
+    setFontSize()
+    graphics2d.setColor(color)
+    graphics2d.drawString(text, 0, graphics2d.getFontMetrics().getMaxAscent())
+    graphics2d.dispose()
+    this.glIdentifier = glGenTextures()
+    val baos = java.io.ByteArrayOutputStream()
+    javax.imageio.ImageIO.write(input, ResourcesExtension.PNG.extension, baos)
+    this.data = org.lwjgl.stb.STBImage.stbi_load_from_memory(
+      App.createBufferFromInputStream(java.io.ByteArrayInputStream(baos.toByteArray())),
+      BufferUtils.createIntBuffer(1), BufferUtils.createIntBuffer(1),
+        BufferUtils.createIntBuffer(1), 4)
+  }
 }
 
 data class Texture2D(val resource: String): RenderableObject {
-  companion object {
-    val LOAD_TEXTURE_FIRST_ERROR_MESSAGE = "Please load the texture before using it."
-  }
-  private var glIdentifier = 0
-  private var dimension = Dimension()
-  private var data: java.nio.ByteBuffer? = null
+  override var glIdentifier: Int = -1
+  override var data: java.nio.ByteBuffer? = null
+  override var dimension = Dimension()
   override fun load() {
     this.glIdentifier = glGenTextures()
     val widthBuffer = BufferUtils.createIntBuffer(1)
@@ -30,20 +98,6 @@ data class Texture2D(val resource: String): RenderableObject {
       widthBuffer, heightBuffer, BufferUtils.createIntBuffer(1), 4)
     this.dimension = Dimension(widthBuffer.get(), heightBuffer.get())
   }
-  override fun getDimension() = if(this.dimension.isValid()) this.dimension
-    else throw App.exitWithError(LOAD_TEXTURE_FIRST_ERROR_MESSAGE)
-  override fun bind() = this.data?.let {
-    glBindTexture(GL_TEXTURE_2D, this.glIdentifier)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexImage2D(
-      GL_TEXTURE_2D, 0, GL_RGBA, this.dimension.width, this.dimension.height,
-      0, GL_RGBA, GL_UNSIGNED_BYTE, it)
-  } ?: run {
-    throw App.exitWithError(LOAD_TEXTURE_FIRST_ERROR_MESSAGE)
-  }
-  override fun free(): Unit = this.data?.let {
-    org.lwjgl.stb.STBImage.stbi_image_free(it) } ?: run { Unit }
 }
 
 @org.springframework.stereotype.Component
@@ -54,6 +108,8 @@ class Renderer2D(
   companion object {
     private val LOGGER = org.slf4j.LoggerFactory.getLogger(Renderer2D::class.java)
     val SHADER_ERROR_MESSAGE = "Couldn't compile shader"
+    val DEFAULT_VERTEX_SHADER = "shaders/basic2d.vs"
+    val DEFAULT_FRAGMENT_SHADER = "shaders/basic2d.fs"
   }
   var window = -1L
   private var program = -1
@@ -79,8 +135,8 @@ class Renderer2D(
       if (compiled == 0) throw App.exitWithError(SHADER_ERROR_MESSAGE)
       return shader
     }
-    val vShader = createShader("shaders/basic2d.vs", GL_VERTEX_SHADER)
-    val fShader = createShader("shaders/basic2d.fs", GL_FRAGMENT_SHADER)
+    val vShader = createShader(DEFAULT_VERTEX_SHADER, GL_VERTEX_SHADER)
+    val fShader = createShader(DEFAULT_FRAGMENT_SHADER, GL_FRAGMENT_SHADER)
     glAttachShader(this.program, vShader)
     glAttachShader(this.program, fShader)
     glLinkProgram(this.program)
