@@ -82,7 +82,7 @@ open class App(
       LOGGER.error(message)
       LOGGER.error("Forcing exit with error...")
       javax.swing.JOptionPane.showConfirmDialog(null,
-        "Sorry, an unspecified error occurred.\n${message}${
+        "Sorry, an error occurred.\n${message}${
           if(LOGGER.isDebugEnabled()) "\n\nCheck the logs for more information."
           else ""}\n\nClick OK to terminate the program.", VideoSettings.STATIC_GAME_NAME,
           javax.swing.JOptionPane.DEFAULT_OPTION, javax.swing.JOptionPane.ERROR_MESSAGE)
