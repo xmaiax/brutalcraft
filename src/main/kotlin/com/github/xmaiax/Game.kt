@@ -2,9 +2,6 @@ package com.github.xmaiax
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.awt.Color
-import java.text.SimpleDateFormat
-import java.util.Date
 
 @Component open class Game(
   @Autowired val renderer: Renderer2D,
@@ -23,14 +20,14 @@ import java.util.Date
     this.trueTypeFont.load()
   }
 
-  private val sdf = SimpleDateFormat("HH:mm:ss")
+  private val sdf = java.text.SimpleDateFormat("HH:mm:ss")
   private var hora = ""
 
   override fun loop(msSinceLastUpdate: Long, inputKeys: List<InputedAction>): Boolean {
-    val horaAtual = this.sdf.format(Date())
+    val horaAtual = this.sdf.format(java.util.Calendar().getInstance().getTime())
     if(hora != horaAtual) {
       hora = horaAtual
-      this.trueTypeFont.bakeText(horaAtual, 120.0f, Color.ORANGE)
+      this.trueTypeFont.bakeText(horaAtual, 120.0f, java.awt.Color.ORANGE)
     }
     return !inputKeys.contains(InputedAction(InputedKey._ESCAPE, InputEvent.RELEASE))
   }
