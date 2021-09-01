@@ -23,7 +23,7 @@ import java.util.Date
     this.trueTypeFont.load()
   }
 
-  private val sdf = SimpleDateFormat("HH:MM:ss")
+  private val sdf = SimpleDateFormat("HH:mm:ss")
   private var hora = ""
 
   override fun loop(msSinceLastUpdate: Long, inputKeys: List<InputedAction>): Boolean {
