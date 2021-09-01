@@ -5,9 +5,10 @@ import org.lwjgl.opengl.GL30C.*
 import org.lwjgl.system.MemoryUtil.NULL
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
 
-@org.springframework.stereotype.Component
-open class VideoSettings(
+@Component
+class VideoSettings(
   @Value("\${settings.video.title}") val title: String,
   @Value("\${settings.video.width}") val width: Int,
   @Value("\${settings.video.height}") val height: Int,
@@ -21,8 +22,8 @@ open class VideoSettings(
   }
 }
 
-@org.springframework.stereotype.Component
-open class AppInfo(
+@Component
+class AppInfo(
   @Value("\${app.info.release-version}") val releaseVersion: String,
   @Value("\${app.info.kotlin-version}") val kotlinVersion: String,
   @Value("\${app.info.spring-boot-version}") val springBootVersion: String,
@@ -78,11 +79,11 @@ open class App(
     fun main(args: Array<String>) {
       initConfig(org.springframework.boot.SpringApplication(App::class.java), *args)
     }
-    fun exitWithError(message: String): Exception {
+    fun exitWithError(message: String, unexpected: Boolean = false): Exception {
       LOGGER.error(message)
       LOGGER.error("Forcing exit with error...")
       javax.swing.JOptionPane.showConfirmDialog(null,
-        "Sorry, an error occurred.\n${message}${
+        "Sorry, an${if(unexpected) " unexpected" else ""} error occurred.\n${message}${
           if(LOGGER.isDebugEnabled()) "\n\nCheck the logs for more information."
           else ""}\n\nClick OK to terminate the program.", VideoSettings.STATIC_GAME_NAME,
           javax.swing.JOptionPane.DEFAULT_OPTION, javax.swing.JOptionPane.ERROR_MESSAGE)
@@ -152,7 +153,7 @@ open class App(
       if (this.videoSettings.fullscreen) glfwGetPrimaryMonitor() else NULL, NULL
     )
     if (this.window == NULL) throw App.exitWithError("Failed to create the GLFW window")
-    glfwSetInputMode(this.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
+    //glfwSetInputMode(this.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
     glfwSetKeyCallback(this.window, org.lwjgl.glfw.GLFWKeyCallbackI(
       fun(window: Long, key: Int, _: Int, action: Int, _: Int) {
         this.renderer2D.window = window
@@ -193,45 +194,48 @@ open class App(
     var currentMs = java.util.Calendar.getInstance().getTimeInMillis()
     var previousPressedControllerKeys = listOf<InputedControllerKey>()
     while (keepRunning) {
-      glfwGetJoystickButtons(GLFW_JOYSTICK_1)?.let { controllerInput ->
-        val currentPressedControllerKeys = InputedControllerKey.values().filter {
-          controllerInput.get(it.position) > 0 }
-        InputedControllerKey.values().map {
-          if(previousPressedControllerKeys.contains(it) &&
-              !currentPressedControllerKeys.contains(it))
-            it.getInputedAction(InputEvent.RELEASE)
-          else if(previousPressedControllerKeys.contains(it) &&
-              currentPressedControllerKeys.contains(it))
-            it.getInputedAction(InputEvent.REPEAT)
-          else if(!previousPressedControllerKeys.contains(it) &&
-              currentPressedControllerKeys.contains(it))
-            it.getInputedAction(InputEvent.PRESS)
-          else it.getInputedAction(InputEvent.INVALID)
-        }.forEach { if(it.event != InputEvent.INVALID) this.pressedKeys.add(it) }
-        previousPressedControllerKeys = currentPressedControllerKeys
-      }
-      if(LOGGER.isDebugEnabled())
-        this.pressedKeys.forEach { if(it.event != InputEvent.REPEAT)
-          LOGGER.debug("Detected key action: ${it}") }
-      keepRunning = this.game.loop(java.util.Calendar.getInstance().getTimeInMillis() - currentMs,
-        this.pressedKeys) && !glfwWindowShouldClose(this.window)
-      this.pressedKeys.clear()
-      glfwPollEvents()
-      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-      glViewport(0, 0, this.videoSettings.width, this.videoSettings.height)
-      program?.let { glUseProgram(it) }
-      this.game.render()
-      currentMs = java.util.Calendar.getInstance().getTimeInMillis()
-      glUseProgram(0)
-      glfwSwapBuffers(this.window)
-      if(!keepRunning) {
-        LOGGER.info("Shutting down engine...")
-        org.lwjgl.glfw.Callbacks.glfwFreeCallbacks(this.window)
-        glfwDestroyWindow(this.window)
-        glfwTerminate()
-        this.game.shutdown()
-        glfwSetErrorCallback(null)?.let { it.free() }
-      }
+      try {
+        glfwGetJoystickButtons(GLFW_JOYSTICK_1)?.let { controllerInput ->
+          val currentPressedControllerKeys = InputedControllerKey.values().filter {
+            controllerInput.get(it.position) > 0 }
+          InputedControllerKey.values().map {
+            if(previousPressedControllerKeys.contains(it) &&
+                !currentPressedControllerKeys.contains(it))
+              it.getInputedAction(InputEvent.RELEASE)
+            else if(previousPressedControllerKeys.contains(it) &&
+                currentPressedControllerKeys.contains(it))
+              it.getInputedAction(InputEvent.REPEAT)
+            else if(!previousPressedControllerKeys.contains(it) &&
+                currentPressedControllerKeys.contains(it))
+              it.getInputedAction(InputEvent.PRESS)
+            else it.getInputedAction(InputEvent.INVALID)
+          }.forEach { if(it.event != InputEvent.INVALID) this.pressedKeys.add(it) }
+          previousPressedControllerKeys = currentPressedControllerKeys
+        }
+        if(LOGGER.isDebugEnabled())
+          this.pressedKeys.forEach { if(it.event != InputEvent.REPEAT)
+            LOGGER.debug("Detected key action: ${it}") }
+        keepRunning = this.game.loop(java.util.Calendar.getInstance().getTimeInMillis() - currentMs,
+          this.pressedKeys) && !glfwWindowShouldClose(this.window)
+        this.pressedKeys.clear()
+        glfwPollEvents()
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+        glViewport(0, 0, this.videoSettings.width, this.videoSettings.height)
+        program?.let { glUseProgram(it) }
+        this.game.render()
+        currentMs = java.util.Calendar.getInstance().getTimeInMillis()
+        glUseProgram(0)
+        glfwSwapBuffers(this.window)
+        if(!keepRunning) {
+          LOGGER.info("Shutting down engine...")
+          org.lwjgl.glfw.Callbacks.glfwFreeCallbacks(this.window)
+          glfwDestroyWindow(this.window)
+          glfwTerminate()
+          this.game.shutdown()
+          glfwSetErrorCallback(null)?.let { it.free() }
+        }
+      } catch(e: Exception) { e.message?.let { throw App.exitWithError(
+          "${e.javaClass.getSimpleName()} -> ${it}", true) }}
     }
     LOGGER.info("Thanks for playing! We hope to see you again!")
   }

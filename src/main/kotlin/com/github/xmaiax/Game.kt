@@ -3,7 +3,7 @@ package com.github.xmaiax
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
-@Component open class Game(
+@Component class Game(
   @Autowired val renderer: Renderer2D,
   @Autowired val videoSettings: VideoSettings
 ): GameLifecycle {
