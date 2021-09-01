@@ -64,7 +64,7 @@
         <binary.name>${project.artifactId}-windows</binary.name>
         <openjdk8.sha256>3e0639deb296f13b66dbc1ac7306cd2784cddc968bed32e703be520c6cbd7bc4</openjdk8.sha256>
         <openjdk8.downloaded-extension>zip</openjdk8.downloaded-extension>
-        <generate-windows-bin.phase>none</generate-windows-bin.phase>
+        <generate-windows-bin.phase>package</generate-windows-bin.phase>
       </properties>
     </profile>
     <profile>
