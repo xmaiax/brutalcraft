@@ -17,6 +17,7 @@ open class VideoSettings(
 ) {
   companion object {
     val OPENGL_VERSION = "3.0"
+    var STATIC_GAME_NAME = "null"
   }
 }
 
@@ -50,9 +51,10 @@ class Slf4jErrorCallback(): org.lwjgl.glfw.GLFWErrorCallback() {
   }
 }
 
-enum class ResourcesExtension(private val extension: String,
+enum class ResourcesExtension(val extension: String,
     private val description: String) {
   PNG("png", "PNG"),
+  TTF("ttf", "TrueType Font"),
   VERTEX_SHADER("vs", "Vertex Shader"),
   FRAGMENT_SHADER("fs", "Fragment Shader"),
   CONFIGURATION("properties", "Configuration"),
@@ -79,50 +81,58 @@ open class App(
     fun exitWithError(message: String): Exception {
       LOGGER.error(message)
       LOGGER.error("Forcing exit with error...")
-      System.exit(-1)
+      javax.swing.JOptionPane.showConfirmDialog(null,
+        "Sorry, an unspecified error occurred.\n${message}${
+          if(LOGGER.isDebugEnabled()) "\n\nCheck the logs for more information."
+          else ""}\n\nClick OK to terminate the program.", VideoSettings.STATIC_GAME_NAME,
+          javax.swing.JOptionPane.DEFAULT_OPTION, javax.swing.JOptionPane.ERROR_MESSAGE)
       return Exception(message)
     }
-    fun getBufferFromResource(resource: String): java.nio.ByteBuffer =
-      Thread.currentThread().getContextClassLoader()
-          .getResource(resource)?.let { url ->
+    fun getUrlFromResource(resource: String): java.net.URL = Thread.currentThread()
+      .getContextClassLoader().getResource(resource)?.let { url ->
         val type = try { ResourcesExtension.fromUrl(url) }
         catch(e: NoSuchElementException) { ResourcesExtension.UNKNOWN }
         if(type != ResourcesExtension.CONFIGURATION)
           LOGGER.debug("Loading ${type} resource '${resource.split("/").last()}': ${url}")
-        val file = java.io.File(url.getFile())
-        if (file.isFile()) {
-          val fis = java.io.FileInputStream(file)
-          val fc = fis.getChannel()
-          val buffer = fc.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, 0, fc.size())
-          fc.close()
-          fis.close()
-          return buffer
-        } else {
-          var output = org.lwjgl.BufferUtils.createByteBuffer(8)
-          val source = url.openStream()
-          var buffer = ByteArray(8192)
-          while (true) {
-            val bytes = source.read(buffer, 0, buffer.size)
-            if (bytes == -1) break
-            if (output.remaining() < bytes) {
-              val resizedOutput = org.lwjgl.BufferUtils.createByteBuffer(
-                Math.max(output.capacity() * 2,
-                output.capacity() - output.remaining() + bytes))
-              output.flip()
-              resizedOutput.put(output)
-              output = resizedOutput
-            }
-            output.put(buffer, 0, bytes)
-          }
-          output.flip()
-          source.close()
-          return output
-        }
+        return url
       } ?: run { throw App.exitWithError("Resource not found: ${resource}") }
+    fun createBufferFromInputStream(inputStream: java.io.InputStream): java.nio.ByteBuffer {
+      var output = org.lwjgl.BufferUtils.createByteBuffer(8)
+      var buffer = ByteArray(8192)
+      while (true) {
+        val bytes = inputStream.read(buffer, 0, buffer.size)
+        if (bytes == -1) break
+        if (output.remaining() < bytes) {
+          val resizedOutput = org.lwjgl.BufferUtils.createByteBuffer(
+            Math.max(output.capacity() * 2,
+            output.capacity() - output.remaining() + bytes))
+          output.flip()
+          resizedOutput.put(output)
+          output = resizedOutput
+        }
+        output.put(buffer, 0, bytes)
+      }
+      output.flip()
+      inputStream.close()
+      return output
+    }
+    fun getBufferFromResource(resource: String): java.nio.ByteBuffer {
+      val url = this.getUrlFromResource(resource)
+      val file = java.io.File(url.getFile())
+      if (file.isFile()) {
+        val fis = java.io.FileInputStream(file)
+        val fc = fis.getChannel()
+        val buffer = fc.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, 0, fc.size())
+        fc.close()
+        fis.close()
+        return buffer
+      } else return this.createBufferFromInputStream(url.openStream())
+    }
   }
   private var window: Long = -1
   private val pressedKeys = mutableListOf<InputedAction>()
   override fun run(vararg args: String) {
+    VideoSettings.STATIC_GAME_NAME = "${this.videoSettings.title}"
     LOGGER.info("${this.videoSettings.title}: ${this.appInfo.welcomeMessage}")
     LOGGER.info("Release version: ${this.appInfo.releaseVersion}")
     LOGGER.info("Kotlin version: ${this.appInfo.kotlinVersion}")
@@ -151,14 +161,14 @@ open class App(
           LOGGER.warn("Unable to capture key with code '${key}' (${InputEvent.fromCode(action)})") }
       }))
     var keepRunning = true
-    val stack = org.lwjgl.system.MemoryStack.stackPush()
-    val pWidth = stack.mallocInt(1)
-    val pHeight = stack.mallocInt(1)
-    glfwGetWindowSize(this.window, pWidth, pHeight)
-    glfwGetVideoMode(glfwGetPrimaryMonitor())?.let { vidMode ->
-      glfwSetWindowPos(this.window,
-        (vidMode.width() - pWidth.get(0)) / 2,
-        (vidMode.height() - pHeight.get(0)) / 2) }
+    org.lwjgl.system.MemoryStack.stackPush().use { stack ->
+      val pWidth = stack.mallocInt(1)
+      val pHeight = stack.mallocInt(1)
+      glfwGetWindowSize(this.window, pWidth, pHeight)
+      glfwGetVideoMode(glfwGetPrimaryMonitor())?.let { vidMode ->
+        glfwSetWindowPos(this.window,
+          (vidMode.width() - pWidth.get(0)) / 2,
+          (vidMode.height() - pHeight.get(0)) / 2) }}
     glfwMakeContextCurrent(this.window)
     glfwShowWindow(this.window)
     glfwSwapInterval(if(this.videoSettings.vsync) 1 else 0)

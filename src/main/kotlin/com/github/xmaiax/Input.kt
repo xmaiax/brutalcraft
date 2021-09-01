@@ -169,7 +169,7 @@ enum class InputedKey(private val alias: String, val glfwCode: Int) {
 }
 
 enum class InputEvent(val alias: String) {
-  RELEASE("RLS"), PRESS("PRS"), REPEAT("RPT"), INVALID("???");
+  RELEASE("Release"), PRESS("Press"), REPEAT("Repeat"), INVALID("???");
   companion object {
     fun fromCode(code: Int) =
       when (code) {

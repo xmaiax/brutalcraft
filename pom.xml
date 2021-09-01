@@ -6,9 +6,9 @@
   <groupId>com.github.xmaiax</groupId>
   <artifactId>brutalcraft</artifactId>
   <packaging>jar</packaging>
-  <version>mk-i</version>
+  <version>mk2</version>
   <name>Brutalcraft</name>
-  <description>Simple 2D platformer game engine powered by Kotlin + LWJGL3 + Spring-Boot.</description>
+  <description>Simple game engine powered by Kotlin + LWJGL3 + Spring-Boot.</description>
   <properties>
     <jdk.version>1.8</jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -65,7 +65,6 @@
         <openjdk8.sha256>3e0639deb296f13b66dbc1ac7306cd2784cddc968bed32e703be520c6cbd7bc4</openjdk8.sha256>
         <openjdk8.downloaded-extension>zip</openjdk8.downloaded-extension>
         <generate-windows-bin.phase>package</generate-windows-bin.phase>
-        <clean-compiled-jars-file-pattern.outputdir>*.jar*</clean-compiled-jars-file-pattern.outputdir>
       </properties>
     </profile>
     <profile>
@@ -81,7 +80,6 @@
         <openjdk8.sha256>a044da8bf198ad756b2bbb83f3d48ddeeffb934b9a9974d9b9bb6d0034413a83</openjdk8.sha256>
         <openjdk8.downloaded-extension>tar.gz</openjdk8.downloaded-extension>
         <generate-windows-bin.phase>none</generate-windows-bin.phase>
-        <clean-compiled-jars-file-pattern.outputdir>*.jar.original</clean-compiled-jars-file-pattern.outputdir>
       </properties>
     </profile>
   </profiles>
@@ -92,6 +90,16 @@
       <resource>
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
+        <excludes>
+          <exclude>**/*.ttf</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>**/*.ttf</include>
+        </includes>
       </resource>
     </resources>
     <plugins>
@@ -162,7 +170,7 @@
         <executions>
           <execution>
             <id>download-openjdk</id>
-            <phase>process-resources</phase>
+            <phase>${generate-windows-bin.phase}</phase>
             <goals>
               <goal>wget</goal>
             </goals>
@@ -224,7 +232,8 @@
             <fileset>
               <directory>${output.directory}</directory>
               <includes>
-                <include>${clean-compiled-jars-file-pattern.outputdir}</include>
+                <include>*.jar</include>
+                <include>*.jar.original</include>
               </includes>
             </fileset>
             <fileset>
@@ -238,7 +247,7 @@
         <executions>
           <execution>
             <id>delete-jars</id>
-            <phase>package</phase>
+            <phase>${generate-windows-bin.phase}</phase>
             <goals>
               <goal>clean</goal>
             </goals>
