@@ -64,8 +64,7 @@
         <binary.name>${project.artifactId}-windows</binary.name>
         <openjdk8.sha256>3e0639deb296f13b66dbc1ac7306cd2784cddc968bed32e703be520c6cbd7bc4</openjdk8.sha256>
         <openjdk8.downloaded-extension>zip</openjdk8.downloaded-extension>
-        <generate-windows-bin.phase>package</generate-windows-bin.phase>
-        <clean-compiled-jars-file-pattern.outputdir>*.jar*</clean-compiled-jars-file-pattern.outputdir>
+        <generate-windows-bin.phase>none</generate-windows-bin.phase>
       </properties>
     </profile>
     <profile>
@@ -81,7 +80,6 @@
         <openjdk8.sha256>a044da8bf198ad756b2bbb83f3d48ddeeffb934b9a9974d9b9bb6d0034413a83</openjdk8.sha256>
         <openjdk8.downloaded-extension>tar.gz</openjdk8.downloaded-extension>
         <generate-windows-bin.phase>none</generate-windows-bin.phase>
-        <clean-compiled-jars-file-pattern.outputdir>*.jar.original</clean-compiled-jars-file-pattern.outputdir>
       </properties>
     </profile>
   </profiles>
@@ -172,7 +170,7 @@
         <executions>
           <execution>
             <id>download-openjdk</id>
-            <phase>process-resources</phase>
+            <phase>${generate-windows-bin.phase}</phase>
             <goals>
               <goal>wget</goal>
             </goals>
@@ -234,7 +232,8 @@
             <fileset>
               <directory>${output.directory}</directory>
               <includes>
-                <include>${clean-compiled-jars-file-pattern.outputdir}</include>
+                <include>*.jar</include>
+                <include>*.jar.original</include>
               </includes>
             </fileset>
             <fileset>
@@ -248,7 +247,7 @@
         <executions>
           <execution>
             <id>delete-jars</id>
-            <phase>package</phase>
+            <phase>${generate-windows-bin.phase}</phase>
             <goals>
               <goal>clean</goal>
             </goals>
