@@ -60,8 +60,7 @@ data class TrueTypeFont(val resource: String): RenderableObject {
     var metrics = graphics2d.getFontMetrics()
     this.dimension = Dimension(metrics.stringWidth(text), metrics.getHeight())
     graphics2d.dispose()
-    input = BufferedImage((this.dimension.width.toDouble() * 1.0).toInt(),
-      this.dimension.height, BufferedImage.TYPE_INT_ARGB)
+    input = BufferedImage(this.dimension.width, this.dimension.height, BufferedImage.TYPE_INT_ARGB)
     graphics2d = input.createGraphics()
     graphics2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY)
     graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)

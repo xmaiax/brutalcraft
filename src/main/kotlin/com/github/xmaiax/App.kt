@@ -28,7 +28,8 @@ class AppInfo(
   @Value("\${app.info.kotlin-version}") val kotlinVersion: String,
   @Value("\${app.info.spring-boot-version}") val springBootVersion: String,
   @Value("\${app.info.lwjgl-version}") val lwjglVersion: String,
-  @Value("\${app.info.welcome-message}") val welcomeMessage: String
+  @Value("\${app.info.welcome-message}") val welcomeMessage: String,
+  @Value("\${app.info.icon-resource-location}") val iconResourceLocation: String
 )
 
 interface GameLifecycle {
@@ -61,8 +62,10 @@ enum class ResourcesExtension(val extension: String,
   CONFIGURATION("properties", "Configuration"),
   UNKNOWN("unknown", "Unknown");
   companion object {
-    fun fromUrl(url: java.net.URL) = ResourcesExtension.values()
-      .filter { it.extension == url.toString().split(".").last() }.first() }
+    fun fromFileName(fileName: String) = try { ResourcesExtension.values()
+        .filter { it.extension == fileName.split(".").last() }.first() }
+      catch(e: NoSuchElementException) { ResourcesExtension.UNKNOWN }
+  }
   override fun toString() = this.description
 }
 
@@ -91,7 +94,7 @@ open class App(
     }
     fun getUrlFromResource(resource: String): java.net.URL = Thread.currentThread()
       .getContextClassLoader().getResource(resource)?.let { url ->
-        val type = try { ResourcesExtension.fromUrl(url) }
+        val type = try { ResourcesExtension.fromFileName(url.toString()) }
         catch(e: NoSuchElementException) { ResourcesExtension.UNKNOWN }
         if(type != ResourcesExtension.CONFIGURATION)
           LOGGER.debug("Loading ${type} resource '${resource.split("/").last()}': ${url}")
@@ -153,6 +156,15 @@ open class App(
       if (this.videoSettings.fullscreen) glfwGetPrimaryMonitor() else NULL, NULL
     )
     if (this.window == NULL) throw App.exitWithError("Failed to create the GLFW window")
+
+    // FIXME Isso aqui tá uma m*rda
+    val glfwIconImage = org.lwjgl.glfw.GLFWImage.create()
+    val iconBuffer = App.getBufferFromResource(this.appInfo.iconResourceLocation)
+    glfwIconImage.set(128, 128, iconBuffer)
+    val images = org.lwjgl.glfw.GLFWImage.malloc(1)
+    images.put(0, glfwIconImage)
+    glfwSetWindowIcon(this.window, images)
+
     //glfwSetInputMode(this.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
     glfwSetKeyCallback(this.window, org.lwjgl.glfw.GLFWKeyCallbackI(
       fun(window: Long, key: Int, _: Int, action: Int, _: Int) {

@@ -15,6 +15,7 @@
     <maintainer.name>Maia</maintainer.name>
     <maintainer.email>felipe_m92@live.com</maintainer.email>
     <main.class>${project.groupId}.App</main.class>
+    <icon.resource-location>application.ico</icon.resource-location>
     <output.directory>RELEASE/</output.directory>
     <logging-pattern>[%-4p] %d{dd/MM/yyyy HH:mm:ss} %32c &lt;%3L&gt; %msg%n</logging-pattern>
     <kotlin.version>1.3.61</kotlin.version>
@@ -61,7 +62,7 @@
       </activation>
       <properties>
         <spring.profiles.active>windows</spring.profiles.active>
-        <binary.name>${project.artifactId}-windows</binary.name>
+        <binary.name>${project.artifactId}</binary.name>
         <openjdk8.sha256>3e0639deb296f13b66dbc1ac7306cd2784cddc968bed32e703be520c6cbd7bc4</openjdk8.sha256>
         <openjdk8.downloaded-extension>zip</openjdk8.downloaded-extension>
         <generate-windows-bin.phase>package</generate-windows-bin.phase>
@@ -92,6 +93,7 @@
         <filtering>true</filtering>
         <excludes>
           <exclude>**/*.ttf</exclude>
+          <exclude>**/*.ico</exclude>
         </excludes>
       </resource>
       <resource>
@@ -99,6 +101,7 @@
         <filtering>false</filtering>
         <includes>
           <include>**/*.ttf</include>
+          <include>**/*.ico</include>
         </includes>
       </resource>
     </resources>
@@ -197,7 +200,7 @@
               <goal>launch4j</goal>
             </goals>
             <configuration>
-              <icon>game.ico</icon>
+              <icon>src/main/resources/${icon.resource-location}</icon>
               <headerType>gui</headerType>
               <outfile>${output.directory}${binary.name}.exe</outfile>
               <jar>${output.directory}${binary.name}.jar</jar>
@@ -206,7 +209,7 @@
                 <path>./jdk8u275-b01-jre</path>
                 <jdkPreference>jreOnly</jdkPreference>
                 <runtimeBits>64</runtimeBits>
-                <opts>-server -Xms512m -Xmx512M</opts>
+                <opts>-server -Xms512m -Xmx512m</opts>
               </jre>
               <versionInfo>
                 <productName>${project.name}</productName>
