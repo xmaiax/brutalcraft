@@ -30,7 +30,7 @@ class AppInfo(
   @Value("\${app.info.lwjgl-version}") val lwjglVersion: String,
   @Value("\${app.info.welcome-message}") val welcomeMessage: String,
   @Value("\${app.info.hide-mouse-cursor}") val hideMouseCursor: Boolean,
-  @Value("\${app.info.icon-resource-location}") val iconResourceLocation: String)
+  @Value("\${app.info.window-icon-location}") val windowIconLocation: String)
 
 interface GameLifecycle {
   fun load()
@@ -156,22 +156,6 @@ open class App(
       if (this.videoSettings.fullscreen) glfwGetPrimaryMonitor() else NULL, NULL
     )
     if (this.window == NULL) throw App.exitWithError("Failed to create the GLFW window")
-    org.lwjgl.system.MemoryStack.stackPush().use { stack ->
-      val widthBuffer = stack.mallocInt(1)
-      val heightBuffer = stack.mallocInt(1)
-      val channelsBuffer = stack.mallocInt(1)
-      val image = org.lwjgl.glfw.GLFWImage.malloc()
-      org.lwjgl.stb.STBImage.stbi_load_from_memory(
-        App.getBufferFromResource(this.appInfo.iconResourceLocation),
-          widthBuffer, heightBuffer, channelsBuffer, 4)?.let {
-            image.set(widthBuffer.get(), heightBuffer.get(), it)
-            org.lwjgl.stb.STBImage.stbi_image_free(it) }
-      val imageBuffer = org.lwjgl.glfw.GLFWImage.malloc(1)
-      imageBuffer.put(0, image)
-      glfwSetWindowIcon(this.window, imageBuffer)
-      imageBuffer.free()
-      image.free()
-    }
     if(this.appInfo.hideMouseCursor)
       glfwSetInputMode(this.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
     glfwSetKeyCallback(this.window, org.lwjgl.glfw.GLFWKeyCallbackI(
@@ -201,6 +185,20 @@ open class App(
     val program = this.renderer2D.initialize()
     glUseProgram(0)
     LOGGER.info("Loading assets...")
+    if(!this.videoSettings.fullscreen)
+      Texture2D(this.appInfo.windowIconLocation).let { icon ->
+        icon.load()
+        val image = org.lwjgl.glfw.GLFWImage.malloc()
+        icon.data?.let {
+          image.set(icon.getDimension().width, icon.getDimension().height, it)
+        }
+        val imageBuffer = org.lwjgl.glfw.GLFWImage.malloc(1)
+        imageBuffer.put(0, image)
+        glfwSetWindowIcon(this.window, imageBuffer)
+        imageBuffer.free()
+        image.free()
+        icon.free()
+      }
     this.game.load()
     LOGGER.info("Assets loaded!")
     fun getFloatColorValue(c1: Char, c2: Char) =
