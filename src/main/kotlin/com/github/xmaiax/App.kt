@@ -29,8 +29,8 @@ class AppInfo(
   @Value("\${app.info.spring-boot-version}") val springBootVersion: String,
   @Value("\${app.info.lwjgl-version}") val lwjglVersion: String,
   @Value("\${app.info.welcome-message}") val welcomeMessage: String,
-  @Value("\${app.info.icon-resource-location}") val iconResourceLocation: String
-)
+  @Value("\${app.info.hide-mouse-cursor}") val hideMouseCursor: Boolean,
+  @Value("\${app.info.icon-resource-location}") val iconResourceLocation: String)
 
 interface GameLifecycle {
   fun load()
@@ -156,16 +156,24 @@ open class App(
       if (this.videoSettings.fullscreen) glfwGetPrimaryMonitor() else NULL, NULL
     )
     if (this.window == NULL) throw App.exitWithError("Failed to create the GLFW window")
-
-    // FIXME Isso aqui tá uma m*rda
-    val glfwIconImage = org.lwjgl.glfw.GLFWImage.create()
-    val iconBuffer = App.getBufferFromResource(this.appInfo.iconResourceLocation)
-    glfwIconImage.set(128, 128, iconBuffer)
-    val images = org.lwjgl.glfw.GLFWImage.malloc(1)
-    images.put(0, glfwIconImage)
-    glfwSetWindowIcon(this.window, images)
-
-    //glfwSetInputMode(this.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
+    org.lwjgl.system.MemoryStack.stackPush().use { stack ->
+      val widthBuffer = stack.mallocInt(1)
+      val heightBuffer = stack.mallocInt(1)
+      val channelsBuffer = stack.mallocInt(1)
+      val image = org.lwjgl.glfw.GLFWImage.malloc()
+      org.lwjgl.stb.STBImage.stbi_load_from_memory(
+        App.getBufferFromResource(this.appInfo.iconResourceLocation),
+          widthBuffer, heightBuffer, channelsBuffer, 4)?.let {
+            image.set(widthBuffer.get(), heightBuffer.get(), it)
+            org.lwjgl.stb.STBImage.stbi_image_free(it) }
+      val imageBuffer = org.lwjgl.glfw.GLFWImage.malloc(1)
+      imageBuffer.put(0, image)
+      glfwSetWindowIcon(this.window, imageBuffer)
+      imageBuffer.free()
+      image.free()
+    }
+    if(this.appInfo.hideMouseCursor)
+      glfwSetInputMode(this.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
     glfwSetKeyCallback(this.window, org.lwjgl.glfw.GLFWKeyCallbackI(
       fun(window: Long, key: Int, _: Int, action: Int, _: Int) {
         this.renderer2D.window = window
