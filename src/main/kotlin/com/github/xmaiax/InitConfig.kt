@@ -2,25 +2,26 @@ package com.github.xmaiax
 
 class InitConfigs {
   companion object {
-    final val SET_LOOK_AND_FEEL = "com.sun.java.swing.plaf.windows.WindowsLookAndFeel"
-    final val RESOLUTION_SEPARATOR = "x"
-    final val JAVA_UI_WIDTH = 250
-    final val JAVA_UI_HEIGHT = 250
-    final val JAVA_UI_RESIZABLE = false
-    final val JAVA_UI_ALWAYS_ON_TOP = true
-    final val JAVA_UI_RESOLUTION_LABEL = "Resolution"
-    final val JAVA_UI_FULLSCREEN_LABEL = "Fullscreen"
-    final val JAVA_UI_VSYNC_LABEL = "V-Sync"
-    final val JAVA_UI_DEBUG_MODE_LABEL = "Debug Mode"
-    final val JAVA_UI_START_BUTTON_LABEL = "Start"
-    final val JAVA_UI_FLAG_FULLSCREEN_DEFAULT = true
-    final val JAVA_UI_FLAG_VSYNC_DEFAULT = true
-    final val JAVA_UI_FLAG_DEBUG_MODE_DEFAULT = false
-    final val PROP_PREFIX_RESOLUTION_WIDTH = "width"
-    final val PROP_PREFIX_RESOLUTION_HEIGHT = "height"
-    final val PROP_PREFIX_FULLSCREEN = "fullscreen"
-    final val PROP_PREFIX_VSYNC = "vsync"
-    final val PROP_PREFIX_TITLE = "title"
+    val SET_LOOK_AND_FEEL = "com.sun.java.swing.plaf.windows.WindowsLookAndFeel"
+    val RESOLUTION_SEPARATOR = "x"
+    val JAVA_UI_WIDTH = 250
+    val JAVA_UI_HEIGHT = 250
+    val JAVA_UI_RESIZABLE = false
+    val JAVA_UI_ALWAYS_ON_TOP = true
+    val JAVA_UI_RESOLUTION_LABEL = "Resolution"
+    val JAVA_UI_FULLSCREEN_LABEL = "Fullscreen"
+    val JAVA_UI_VSYNC_LABEL = "V-Sync"
+    val JAVA_UI_DEBUG_MODE_LABEL = "Debug Mode"
+    val JAVA_UI_START_BUTTON_LABEL = "Start"
+    val JAVA_UI_FLAG_FULLSCREEN_DEFAULT = true
+    val JAVA_UI_FLAG_VSYNC_DEFAULT = true
+    val JAVA_UI_FLAG_DEBUG_MODE_DEFAULT = false
+    val PROP_PREFIX_RESOLUTION_WIDTH = "width"
+    val PROP_PREFIX_RESOLUTION_HEIGHT = "height"
+    val PROP_PREFIX_FULLSCREEN = "fullscreen"
+    val PROP_PREFIX_VSYNC = "vsync"
+    val PROP_PREFIX_TITLE = "title"
+    val PROP_WINDOW_ICON_LOCATION = "app.info.window-icon-location"
   }
 }
 
@@ -91,7 +92,7 @@ fun initConfig(springApp: org.springframework.boot.SpringApplication, vararg arg
     if(debugModeCheckbox.isSelected()) {
       props.setProperty("logging.level.root", "INFO")
       props.setProperty("logging.level.${applicationProperties.get("app.info.release-package")}", "DEBUG")
-      props.setProperty("logging.file", ".${java.io.File.separator}${applicationProperties.get("app.info.release-name")}.log")
+      props.setProperty("logging.file", "./${applicationProperties.get("app.info.release-name")}.log")
       props.setProperty("logging.pattern.file", applicationProperties.get("logging.pattern.console"))
     }
     else {
@@ -117,6 +118,11 @@ ${applicationProperties.get("app.info.contact.name")} (${
   })
   buttonsPanel.add(aboutButton)
   buttonsPanel.add(startButton)
+  applicationProperties.get(InitConfigs.PROP_WINDOW_ICON_LOCATION)?.let { propIcon ->
+    Thread.currentThread().getContextClassLoader().getResource(propIcon)?.let { iconUrl ->
+      configFrame.setIconImage(javax.swing.ImageIcon(iconUrl).getImage())
+    }
+  }
   configFrame.getContentPane().add(buttonsPanel, java.awt.BorderLayout.PAGE_END)
   configFrame.pack()
   configFrame.setVisible(true)

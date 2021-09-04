@@ -99,7 +99,7 @@ open class App(
         val type = try { ResourcesExtension.fromFileName(url.toString()) }
         catch(e: NoSuchElementException) { ResourcesExtension.UNKNOWN }
         if(type != ResourcesExtension.CONFIGURATION)
-          LOGGER.debug("Loading ${type} resource '${resource.split(java.io.File.separator).last()}': ${url}")
+          LOGGER.debug("Loading ${type} resource '${resource.split("/").last()}': ${url}")
         return url
       } ?: run { throw App.exitWithError("Resource not found: ${resource}") }
     fun createBufferFromInputStream(inputStream: java.io.InputStream): java.nio.ByteBuffer {

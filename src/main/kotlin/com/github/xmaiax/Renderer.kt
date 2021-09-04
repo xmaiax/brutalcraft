@@ -3,7 +3,6 @@ package com.github.xmaiax
 import java.awt.Font
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
-import java.io.File
 import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30C.*
@@ -103,8 +102,7 @@ data class Texture2D(val resource: String): RenderableObject {
 data class Animation2D(val resourceFolder: String): RenderableObject {
 
   companion object {
-    val LOGGER = org.slf4j.LoggerFactory.getLogger(Animation2D::class.java)
-    val JAR_FILE_ENTRY_PREFFIX_URL = "BOOT-INF${File.separator}classes${File.separator}"
+    val JAR_FILE_ENTRY_PREFFIX_URL = "BOOT-INF/classes/"
   }
 
   override var glIdentifier: Int = -1
@@ -119,7 +117,7 @@ data class Animation2D(val resourceFolder: String): RenderableObject {
       this.textures2D = files.map { Texture2D("${this.resourceFolder}${it}") }
       this.textures2D.forEach { it.load() }
     }
-    val dir = File(url.getFile())
+    val dir = java.io.File(url.getFile())
     if(dir.isDirectory())
       loadAllTexturesWithFileNames(dir.listFiles().map { it.getName() })
     else {
@@ -132,8 +130,7 @@ data class Animation2D(val resourceFolder: String): RenderableObject {
       } ?: run { true }) break
       loadAllTexturesWithFileNames(files.filter {
         it.startsWith(JAR_FILE_ENTRY_PREFFIX_URL + this.resourceFolder) &&
-          !it.endsWith(File.separator) }.map { it.substring(JAR_FILE_ENTRY_PREFFIX_URL.length
-            ).split(File.separator).last() })
+          !it.endsWith("/") }.map { it.substring(JAR_FILE_ENTRY_PREFFIX_URL.length).split("/").last() })
     }
     this.textures2D.first().let {
       this.glIdentifier = it.glIdentifier
@@ -141,8 +138,8 @@ data class Animation2D(val resourceFolder: String): RenderableObject {
       this.dimension = it.getDimension()
     }
     return Unit
-  } ?: run { throw App.exitWithError(
-    "Animation directory '${this.resourceFolder}' doesn't exists or is empty!") }
+  } ?: run { throw App.exitWithError("Animation resource directory '${
+    this.resourceFolder}' doesn't exists or is empty!") }
 
   fun update(msSinceLastUpdate: Long) {
     //
