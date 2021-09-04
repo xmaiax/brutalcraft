@@ -102,6 +102,13 @@ fun initConfig(springApp: org.springframework.boot.SpringApplication, vararg arg
     springApp.setDefaultProperties(props)
     springApp.run(*args)
   })
+  val windowIcon: javax.swing.ImageIcon? = applicationProperties.get(
+      InitConfigs.PROP_WINDOW_ICON_LOCATION)?.let { propIcon ->
+    Thread.currentThread().getContextClassLoader().getResource(propIcon)?.let { iconUrl ->
+      javax.swing.ImageIcon(iconUrl)
+    }
+  }
+  windowIcon?.let { configFrame.setIconImage(it.getImage()) }
   val aboutButton = javax.swing.JButton("About")
   aboutButton.addActionListener(java.awt.event.ActionListener {
     javax.swing.JOptionPane.showMessageDialog(configFrame, """${
@@ -114,15 +121,10 @@ LWJGL Version: ${applicationProperties.get("app.info.lwjgl-version")}
 Contact:
 ${applicationProperties.get("app.info.contact.name")} (${
   applicationProperties.get("app.info.contact.email")})
-""", "About ${title}", javax.swing.JOptionPane.QUESTION_MESSAGE)
+""", "About ${title}", javax.swing.JOptionPane.QUESTION_MESSAGE, windowIcon)
   })
   buttonsPanel.add(aboutButton)
   buttonsPanel.add(startButton)
-  applicationProperties.get(InitConfigs.PROP_WINDOW_ICON_LOCATION)?.let { propIcon ->
-    Thread.currentThread().getContextClassLoader().getResource(propIcon)?.let { iconUrl ->
-      configFrame.setIconImage(javax.swing.ImageIcon(iconUrl).getImage())
-    }
-  }
   configFrame.getContentPane().add(buttonsPanel, java.awt.BorderLayout.PAGE_END)
   configFrame.pack()
   configFrame.setVisible(true)
