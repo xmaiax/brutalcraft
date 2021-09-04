@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component
   }
 
   val warrior = Animation2D("textures/character/warrior/idle/")
+  val scale = 1.75
 
   override fun load() {
     warrior.load()
@@ -26,8 +27,8 @@ import org.springframework.stereotype.Component
 
   override fun render() {
     this.warrior.bind()
-    this.renderer.render2DQuad(Position(this.videoSettings.width / 2 - this.warrior.getDimension().width,
-      this.videoSettings.height / 2 - this.warrior.getDimension().height), this.warrior.getDimension())
+    this.renderer.render2DQuad(Position(this.videoSettings.width / 2 - this.warrior.getDimension(this.scale).width / 2,
+      this.videoSettings.height / 2 - this.warrior.getDimension(this.scale).height / 2), this.warrior.getDimension(this.scale), this.scale)
   }
 
   override fun shutdown() {
