@@ -69,6 +69,8 @@ enum class ResourcesExtension(val extension: String,
   override fun toString() = this.description
 }
 
+class EngineExpectedException(override val message: String) : Exception(message)
+
 @org.springframework.boot.autoconfigure.SpringBootApplication
 open class App(
   @Autowired private val videoSettings: VideoSettings,
@@ -90,14 +92,14 @@ open class App(
           if(LOGGER.isDebugEnabled()) "\n\nCheck the logs for more information."
           else ""}\n\nClick OK to terminate the program.", VideoSettings.STATIC_GAME_NAME,
           javax.swing.JOptionPane.DEFAULT_OPTION, javax.swing.JOptionPane.ERROR_MESSAGE)
-      return Exception(message)
+      return if(unexpected) Exception(message) else EngineExpectedException(message)
     }
     fun getUrlFromResource(resource: String): java.net.URL = Thread.currentThread()
       .getContextClassLoader().getResource(resource)?.let { url ->
         val type = try { ResourcesExtension.fromFileName(url.toString()) }
         catch(e: NoSuchElementException) { ResourcesExtension.UNKNOWN }
         if(type != ResourcesExtension.CONFIGURATION)
-          LOGGER.debug("Loading ${type} resource '${resource.split("/").last()}': ${url}")
+          LOGGER.debug("Loading ${type} resource '${resource.split(java.io.File.separator).last()}': ${url}")
         return url
       } ?: run { throw App.exitWithError("Resource not found: ${resource}") }
     fun createBufferFromInputStream(inputStream: java.io.InputStream): java.nio.ByteBuffer {
@@ -252,8 +254,13 @@ open class App(
           this.game.shutdown()
           glfwSetErrorCallback(null)?.let { it.free() }
         }
-      } catch(e: Exception) { e.message?.let { throw App.exitWithError(
-          "${e.javaClass.getSimpleName()} -> ${it}", true) }}
+      } catch(e: Exception) {
+        e.message?.let { message ->
+          if(e !is EngineExpectedException)
+            throw App.exitWithError("${e.javaClass.getSimpleName()} -> ${message}", true)
+          else System.exit(-1)
+        }
+      }
     }
     LOGGER.info("Thanks for playing! We hope to see you again!")
   }

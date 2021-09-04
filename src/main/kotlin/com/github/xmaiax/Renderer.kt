@@ -3,6 +3,7 @@ package com.github.xmaiax
 import java.awt.Font
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
+import java.io.File
 import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30C.*
@@ -96,6 +97,60 @@ data class Texture2D(val resource: String): RenderableObject {
       App.getBufferFromResource(this.resource),
       widthBuffer, heightBuffer, BufferUtils.createIntBuffer(1), 4)
     this.dimension = Dimension(widthBuffer.get(), heightBuffer.get())
+  }
+}
+
+data class Animation2D(val resourceFolder: String): RenderableObject {
+
+  companion object {
+    val LOGGER = org.slf4j.LoggerFactory.getLogger(Animation2D::class.java)
+    val JAR_FILE_ENTRY_PREFFIX_URL = "BOOT-INF${File.separator}classes${File.separator}"
+  }
+
+  override var glIdentifier: Int = -1
+  override var data: java.nio.ByteBuffer? = null
+  override var dimension = Dimension()
+
+  private var textures2D: List<Texture2D> = listOf()
+
+  override fun load(): Unit = Thread.currentThread().getContextClassLoader()
+      .getResource(this.resourceFolder)?.let { url ->
+    fun loadAllTexturesWithFileNames(files: List<String>) {
+      this.textures2D = files.map { Texture2D("${this.resourceFolder}${it}") }
+      this.textures2D.forEach { it.load() }
+    }
+    val dir = File(url.getFile())
+    if(dir.isDirectory())
+      loadAllTexturesWithFileNames(dir.listFiles().map { it.getName() })
+    else {
+      val zipIS = java.util.zip.ZipInputStream(App::class.java.getProtectionDomain()
+        .getCodeSource().getLocation().openStream())
+      val files = mutableListOf<String>()
+      while(true) if(zipIS.getNextEntry()?.let { entry ->
+        files.add(entry.getName())
+        false
+      } ?: run { true }) break
+      loadAllTexturesWithFileNames(files.filter {
+        it.startsWith(JAR_FILE_ENTRY_PREFFIX_URL + this.resourceFolder) &&
+          !it.endsWith(File.separator) }.map { it.substring(JAR_FILE_ENTRY_PREFFIX_URL.length
+            ).split(File.separator).last() })
+    }
+    this.textures2D.first().let {
+      this.glIdentifier = it.glIdentifier
+      this.data = it.data
+      this.dimension = it.getDimension()
+    }
+    return Unit
+  } ?: run { throw App.exitWithError(
+    "Animation directory '${this.resourceFolder}' doesn't exists or is empty!") }
+
+  fun update(msSinceLastUpdate: Long) {
+    //
+  }
+
+  override fun free() {
+    this.textures2D.forEach { it.free() }
+    this.textures2D = emptyList()
   }
 }
 
