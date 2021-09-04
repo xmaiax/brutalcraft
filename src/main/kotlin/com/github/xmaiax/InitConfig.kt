@@ -22,6 +22,7 @@ class InitConfigs {
     val PROP_PREFIX_VSYNC = "vsync"
     val PROP_PREFIX_TITLE = "title"
     val PROP_WINDOW_ICON_LOCATION = "app.info.window-icon-location"
+    val PROP_ABOUT_IMAGE_LOCATION = "app.info.about-image"
   }
 }
 
@@ -102,13 +103,12 @@ fun initConfig(springApp: org.springframework.boot.SpringApplication, vararg arg
     springApp.setDefaultProperties(props)
     springApp.run(*args)
   })
-  val windowIcon: javax.swing.ImageIcon? = applicationProperties.get(
-      InitConfigs.PROP_WINDOW_ICON_LOCATION)?.let { propIcon ->
-    Thread.currentThread().getContextClassLoader().getResource(propIcon)?.let { iconUrl ->
-      javax.swing.ImageIcon(iconUrl)
-    }
+  fun getImageIconFromProperty(property: String): javax.swing.ImageIcon? = applicationProperties.get(
+    property)?.let { Thread.currentThread().getContextClassLoader()
+      .getResource(it)?.let { imageUrl -> javax.swing.ImageIcon(imageUrl) } }
+  getImageIconFromProperty(InitConfigs.PROP_WINDOW_ICON_LOCATION)?.let { icon ->
+    configFrame.setIconImage(icon.getImage())
   }
-  windowIcon?.let { configFrame.setIconImage(it.getImage()) }
   val aboutButton = javax.swing.JButton("About")
   aboutButton.addActionListener(java.awt.event.ActionListener {
     javax.swing.JOptionPane.showMessageDialog(configFrame, """${
@@ -121,7 +121,8 @@ LWJGL Version: ${applicationProperties.get("app.info.lwjgl-version")}
 Contact:
 ${applicationProperties.get("app.info.contact.name")} (${
   applicationProperties.get("app.info.contact.email")})
-""", "About ${title}", javax.swing.JOptionPane.QUESTION_MESSAGE, windowIcon)
+""", "About ${title}", javax.swing.JOptionPane.QUESTION_MESSAGE,
+    getImageIconFromProperty(InitConfigs.PROP_ABOUT_IMAGE_LOCATION))
   })
   buttonsPanel.add(aboutButton)
   buttonsPanel.add(startButton)
