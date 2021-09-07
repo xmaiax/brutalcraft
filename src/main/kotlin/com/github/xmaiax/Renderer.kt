@@ -232,9 +232,9 @@ class Renderer2D(
   fun render2DQuad(position: Position, dimension: Dimension, scale: Double = 1.0,
       horizontalInvert: Boolean = false, alpha: Double = 1.0) {
     glBindVertexArray(glGenVertexArrays())
-    val sizeX = (dimension.width.toDouble() * 2.0 * scale.toDouble() /
+    val sizeX = (dimension.width.toDouble() * 2.0 /
       this.videoSettings.width.toDouble()).toFloat()
-    val sizeY = (dimension.height.toDouble() * 2.0 * scale.toDouble() /
+    val sizeY = (dimension.height.toDouble() * 2.0 /
       this.videoSettings.height.toDouble()).toFloat()
     val startingPositionX: Float = ((2.0 * position.x.toDouble() - this.videoSettings.width.toDouble()) /
       this.videoSettings.width.toDouble()).toFloat()
