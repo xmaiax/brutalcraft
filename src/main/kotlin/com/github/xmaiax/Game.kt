@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired
 
   var isMoving = false
   var isFacingBack = false
-  val warriorScale = 8.0
+  val warriorScale = 5.0
   val warriorMirrorWidthCorrection = 12
 
   val warriorWalk = Animation2D("textures/character/warrior/walk/")

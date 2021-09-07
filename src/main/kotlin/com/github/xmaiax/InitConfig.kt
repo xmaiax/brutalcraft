@@ -91,11 +91,11 @@ fun initConfig(springApp: org.springframework.boot.SpringApplication, vararg arg
       fullscreenCheckbox.isSelected().toString())
     props.setProperty(getValuePropertyNameFromVideoSettings(InitConfigs.PROP_PREFIX_VSYNC),
       vsyncCheckbox.isSelected().toString())
+    props.setProperty("logging.file", "./${applicationProperties.get("app.info.release-name")}.log")
+    props.setProperty("logging.pattern.file", applicationProperties.get("logging.pattern.console"))
     if(debugModeCheckbox.isSelected()) {
       props.setProperty("logging.level.root", "INFO")
       props.setProperty("logging.level.${applicationProperties.get("app.info.release-package")}", "DEBUG")
-      props.setProperty("logging.file", "./${applicationProperties.get("app.info.release-name")}.log")
-      props.setProperty("logging.pattern.file", applicationProperties.get("logging.pattern.console"))
     }
     else {
       props.setProperty("logging.level.root", "WARN")
