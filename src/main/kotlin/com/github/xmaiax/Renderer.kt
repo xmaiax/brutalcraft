@@ -229,7 +229,7 @@ class Renderer2D(
     glVertexAttribPointer(programAttributeLocation, 2, GL_FLOAT, true, 0, 0L);
     glEnableVertexAttribArray(programAttributeLocation)
   }
-  fun render2DQuad(position: Position, dimension: Dimension, scale: Double = 1.0,
+  fun render2DQuad(position: Position, dimension: Dimension,
       horizontalInvert: Boolean = false, alpha: Double = 1.0) {
     glBindVertexArray(glGenVertexArrays())
     val sizeX = (dimension.width.toDouble() * 2.0 /

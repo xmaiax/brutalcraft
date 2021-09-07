@@ -12,23 +12,23 @@ import org.springframework.beans.factory.annotation.Autowired
   }
 
   var isMoving = false
-  var isMovingBackwards = false
+  var isFacingBack = false
   val warriorScale = 4.0
   val warriorMirrorWidthCorrection = 12
 
-  val warriorIdle = Animation2D("textures/character/warrior/idle/")
-  val warriorIdleIndex = Animation2DIndex(90)
-
   val warriorWalk = Animation2D("textures/character/warrior/walk/")
   val warriorWalkIndex = Animation2DIndex(90)
+
+  val warriorIdle = Animation2D("textures/character/warrior/idle/")
+  val warriorIdleIndex = Animation2DIndex(90)
 
   val moveLeftKeys = listOf(InputedKey._LEFT, InputedKey._A, InputedKey._GAMEPAD_DPAD_LEFT)
   val moveRightKeys = listOf(InputedKey._RIGHT, InputedKey._D, InputedKey._GAMEPAD_DPAD_RIGHT)
   val lastPressedKeys = mutableListOf<InputedKey>()
 
   override fun load() {
-    this.warriorIdle.load()
     this.warriorWalk.load()
+    this.warriorIdle.load()
   }
 
   override fun loop(msSinceLastUpdate: Long, inputKeys: List<InputedAction>): Boolean {
@@ -54,7 +54,7 @@ import org.springframework.beans.factory.annotation.Autowired
     }
 
     if(this.isMoving)
-      this.isMovingBackwards = this.lastPressedKeys.any { it in this.moveLeftKeys }
+      this.isFacingBack = this.lastPressedKeys.any { it in this.moveLeftKeys }
 
     if(this.isMoving)
       this.warriorWalk.update(msSinceLastUpdate, this.warriorWalkIndex)
@@ -65,18 +65,23 @@ import org.springframework.beans.factory.annotation.Autowired
   }
 
   override fun render() {
-    if(this.isMoving) this.warriorWalk.bind()
-    else this.warriorIdle.bind()
+
+    if(this.isMoving)
+      this.warriorWalk.bind()
+    else
+      this.warriorIdle.bind()
+
     this.renderer.render2DQuad(Position(
-        -(if(this.isMovingBackwards) (this.warriorMirrorWidthCorrection * this.warriorScale).toInt() else 0) +
-      this.videoSettings.width  / 2 - this.warriorIdle.getDimension(this.warriorScale).width / 2,
-      this.videoSettings.height / 2 - this.warriorIdle.getDimension(this.warriorScale).height / 2),
-        this.warriorIdle.getDimension(this.warriorScale), this.warriorScale, this.isMovingBackwards)
+        -(if(this.isFacingBack) (this.warriorMirrorWidthCorrection * this.warriorScale).toInt() else 0) +
+      this.videoSettings.width  / 2 - this.warriorWalk.getDimension(this.warriorScale).width / 2,
+      this.videoSettings.height / 2 - this.warriorWalk.getDimension(this.warriorScale).height / 2),
+        this.warriorWalk.getDimension(this.warriorScale), this.isFacingBack)
+
   }
 
   override fun shutdown() {
-    this.warriorIdle.free()
     this.warriorWalk.free()
+    this.warriorIdle.free()
   }
 
 }
