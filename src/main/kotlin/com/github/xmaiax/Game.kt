@@ -1,9 +1,8 @@
 package com.github.xmaiax
 
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Component
 
-@Component class Game(
+@org.springframework.stereotype.Component class Game(
   @Autowired val renderer: Renderer2D,
   @Autowired val videoSettings: VideoSettings
 ): GameLifecycle {
@@ -48,8 +47,10 @@ import org.springframework.stereotype.Component
   override fun render() {
     if(this.isWalking) this.warriorWalk.bind()
     else this.warriorIdle.bind()
-    this.renderer.render2DQuad(Position(this.videoSettings.width / 2 - this.warriorIdle.getDimension(this.warriorScale).width / 2,
-      this.videoSettings.height / 2 - this.warriorIdle.getDimension(this.warriorScale).height / 2), this.warriorIdle.getDimension(this.warriorScale), this.warriorScale)
+    this.renderer.render2DQuad(Position(
+      this.videoSettings.width  / 2 - this.warriorIdle.getDimension(this.warriorScale).width / 2,
+      this.videoSettings.height / 2 - this.warriorIdle.getDimension(this.warriorScale).height / 2),
+        this.warriorIdle.getDimension(this.warriorScale), this.warriorScale)
   }
 
   override fun shutdown() {
