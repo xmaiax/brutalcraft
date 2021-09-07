@@ -28,8 +28,8 @@ interface RenderableObject {
     else this.throwResourceNotLoadedException()
   fun bind() = this.data?.let {
     glBindTexture(GL_TEXTURE_2D, this.glIdentifier)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
     glTexImage2D(
       GL_TEXTURE_2D, 0, GL_RGBA, this.dimension.width, this.dimension.height,
       0, GL_RGBA, GL_UNSIGNED_BYTE, it)
@@ -124,10 +124,9 @@ data class Animation2D(val resourceFolder: String): RenderableObject {
       val zipIS = java.util.zip.ZipInputStream(App::class.java.getProtectionDomain()
         .getCodeSource().getLocation().openStream())
       val files = mutableListOf<String>()
-      while(true) if(zipIS.getNextEntry()?.let { entry ->
-        files.add(entry.getName())
-        false
-      } ?: run { true }) break
+      while(true)
+        if(zipIS.getNextEntry()?.let { !files.add(it.getName())
+          } ?: run { true }) break
       loadAllTexturesWithFileNames(files.filter {
         it.startsWith(JAR_FILE_ENTRY_PREFFIX_URL + this.resourceFolder) &&
           !it.endsWith("/") }.map { it.substring(JAR_FILE_ENTRY_PREFFIX_URL.length).split("/").last() })
@@ -141,13 +140,32 @@ data class Animation2D(val resourceFolder: String): RenderableObject {
   } ?: run { throw App.exitWithError("Animation resource directory '${
     this.resourceFolder}' doesn't exists or is empty!") }
 
-  fun update(msSinceLastUpdate: Long) {
-    //
+  fun update(msSinceLastUpdate: Long, animationIndex: Animation2DIndex) {
+    animationIndex.msCounter += msSinceLastUpdate
+    if(animationIndex.msCounter >= animationIndex.msUntilNextFrame) {
+      animationIndex.msCounter -= animationIndex.msUntilNextFrame
+      animationIndex.index += 1
+    }
+    if(animationIndex.index >= this.textures2D.size)
+      animationIndex.index = 0
+    this.textures2D.get(animationIndex.index).let { text2D ->
+      this.glIdentifier = text2D.glIdentifier
+      this.data = text2D.data
+      this.dimension = text2D.dimension
+    }
   }
 
   override fun free() {
     this.textures2D.forEach { it.free() }
     this.textures2D = emptyList()
+  }
+}
+
+data class Animation2DIndex(val msUntilNextFrame: Int,
+    var msCounter: Long = 0, var index: Int = 0) {
+  fun reset() {
+    this.msCounter = 0
+    this.index = 0
   }
 }
 
