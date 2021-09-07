@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired
 
   var isMoving = false
   var isFacingBack = false
-  val warriorScale = 4.0
+  val warriorScale = 8.0
   val warriorMirrorWidthCorrection = 12
 
   val warriorWalk = Animation2D("textures/character/warrior/walk/")
@@ -49,9 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired
       else this.isMoving
 
     if(this.isMoving && this.lastPressedKeys.any { it in this.moveLeftKeys } &&
-        this.lastPressedKeys.any { it in this.moveRightKeys }) {
-      this.isMoving = false
-    }
+        this.lastPressedKeys.any { it in this.moveRightKeys }) this.isMoving = false
 
     if(this.isMoving)
       this.isFacingBack = this.lastPressedKeys.any { it in this.moveLeftKeys }
@@ -65,18 +63,14 @@ import org.springframework.beans.factory.annotation.Autowired
   }
 
   override fun render() {
-
-    if(this.isMoving)
-      this.warriorWalk.bind()
-    else
-      this.warriorIdle.bind()
-
-    this.renderer.render2DQuad(Position(
-        -(if(this.isFacingBack) (this.warriorMirrorWidthCorrection * this.warriorScale).toInt() else 0) +
-      this.videoSettings.width  / 2 - this.warriorWalk.getDimension(this.warriorScale).width / 2,
-      this.videoSettings.height / 2 - this.warriorWalk.getDimension(this.warriorScale).height / 2),
-        this.warriorWalk.getDimension(this.warriorScale), this.isFacingBack)
-
+    (if(this.isMoving) this.warriorWalk else this.warriorIdle).let { currentAnimation ->
+      currentAnimation.bind()
+      this.renderer.render2DQuad(Position(
+          -(if(this.isFacingBack) (this.warriorMirrorWidthCorrection * this.warriorScale).toInt() else 0) +
+        this.videoSettings.width  / 2 - currentAnimation.getDimension(this.warriorScale).width / 2,
+        this.videoSettings.height * 3 / 4 - currentAnimation.getDimension(this.warriorScale).height / 2),
+          currentAnimation.getDimension(this.warriorScale), this.isFacingBack)
+    }
   }
 
   override fun shutdown() {
