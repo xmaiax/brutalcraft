@@ -26,11 +26,10 @@ import org.springframework.stereotype.Component
     this.warriorWalk.load()
   }
 
-
   override fun loop(msSinceLastUpdate: Long, inputKeys: List<InputedAction>): Boolean {
     val currentIsWalking =
-      inputKeys.contains(InputedAction(InputedKey._RIGHT, InputEvent.PRESS)) ||
-      inputKeys.contains(InputedAction(InputedKey._RIGHT, InputEvent.REPEAT))
+      inputKeys.contains(InputedAction(InputedKey._GAMEPAD_DPAD_RIGHT, InputEvent.PRESS)) ||
+      inputKeys.contains(InputedAction(InputedKey._GAMEPAD_DPAD_RIGHT, InputEvent.REPEAT))
 
     if(currentIsWalking != this.isWalking) {
       this.warriorIdleIndex.reset()
