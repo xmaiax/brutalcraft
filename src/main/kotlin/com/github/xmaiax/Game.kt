@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired
   val warriorMirrorWidthCorrection = 12
 
   val warriorWalk = Animation2D("textures/character/warrior/walk/")
-  val warriorWalkIndex = Animation2DIndex(90)
+  val warriorWalkIndex = Animation2DIndex(80)
 
   val warriorIdle = Animation2D("textures/character/warrior/idle/")
   val warriorIdleIndex = Animation2DIndex(90)
