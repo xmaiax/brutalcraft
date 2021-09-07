@@ -93,13 +93,11 @@ fun initConfig(springApp: org.springframework.boot.SpringApplication, vararg arg
       vsyncCheckbox.isSelected().toString())
     props.setProperty("logging.file", "./${applicationProperties.get("app.info.release-name")}.log")
     props.setProperty("logging.pattern.file", applicationProperties.get("logging.pattern.console"))
+    props.setProperty("logging.level.root", "WARN")
+    props.setProperty("logging.level.${applicationProperties.get("app.info.release-package")}", "WARN")
     if(debugModeCheckbox.isSelected()) {
       props.setProperty("logging.level.root", "INFO")
       props.setProperty("logging.level.${applicationProperties.get("app.info.release-package")}", "DEBUG")
-    }
-    else {
-      props.setProperty("logging.level.root", "WARN")
-      props.setProperty("logging.level.${applicationProperties.get("app.info.release-package")}", "INFO")
     }
     springApp.setDefaultProperties(props)
     springApp.run(*args)
