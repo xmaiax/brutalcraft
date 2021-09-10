@@ -50,7 +50,7 @@ data class TrueTypeFont(val resource: String): RenderableObject {
       App.getUrlFromResource(this.resource).openStream())
   }
   fun bakeText(text: String, fontSize: Float = 40.0f,
-      color: java.awt.Color = java.awt.Color.WHITE): String {
+      color: java.awt.Color = java.awt.Color.WHITE): TrueTypeFont {
     var input = BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
     var graphics2d = input.createGraphics()
     fun setFontSize() = this.font?.let {
@@ -82,7 +82,7 @@ data class TrueTypeFont(val resource: String): RenderableObject {
       App.createBufferFromInputStream(java.io.ByteArrayInputStream(baos.toByteArray())),
       BufferUtils.createIntBuffer(1), BufferUtils.createIntBuffer(1),
         BufferUtils.createIntBuffer(1), 4)
-    return text
+    return this.copy()
   }
 }
 
@@ -174,7 +174,7 @@ data class Animation2DIndex(val msUntilNextFrame: Int,
 @org.springframework.stereotype.Component
 class Renderer2D(
   @org.springframework.beans.factory.annotation.Autowired
-  private val videoSettings: VideoSettings
+  val videoSettings: VideoSettings
 ) {
   companion object {
     private val LOGGER = org.slf4j.LoggerFactory.getLogger(Renderer2D::class.java)
