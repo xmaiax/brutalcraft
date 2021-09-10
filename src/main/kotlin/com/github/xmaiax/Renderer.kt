@@ -49,7 +49,8 @@ data class TrueTypeFont(val resource: String): RenderableObject {
     this.font = Font.createFont(Font.TRUETYPE_FONT,
       App.getUrlFromResource(this.resource).openStream())
   }
-  fun bakeText(text: String, fontSize: Float, color: java.awt.Color) {
+  fun bakeText(text: String, fontSize: Float = 40.0f,
+      color: java.awt.Color = java.awt.Color.WHITE): String {
     var input = BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
     var graphics2d = input.createGraphics()
     fun setFontSize() = this.font?.let {
@@ -81,6 +82,7 @@ data class TrueTypeFont(val resource: String): RenderableObject {
       App.createBufferFromInputStream(java.io.ByteArrayInputStream(baos.toByteArray())),
       BufferUtils.createIntBuffer(1), BufferUtils.createIntBuffer(1),
         BufferUtils.createIntBuffer(1), 4)
+    return text
   }
 }
 

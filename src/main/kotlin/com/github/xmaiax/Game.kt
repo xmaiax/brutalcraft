@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired
     private val LOGGER = org.slf4j.LoggerFactory.getLogger(Game::class.java)
   }
 
+  val genericTTF = TrueTypeFont("fonts/novem___.ttf")
+  @Autowired lateinit var fpsCounter: FPSCounter
+
   var isMoving = false
   var isFacingBack = false
   val warriorScale = 5.0
@@ -27,6 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired
   val lastPressedKeys = mutableListOf<InputedKey>()
 
   override fun load() {
+    this.genericTTF.load()
+    this.genericTTF.bakeText(this.fpsCounter.getText())
     this.warriorWalk.load()
     this.warriorIdle.load()
   }
@@ -71,9 +76,16 @@ import org.springframework.beans.factory.annotation.Autowired
         this.videoSettings.height * 3 / 4 - currentAnimation.getDimension(this.warriorScale).height / 2),
           currentAnimation.getDimension(this.warriorScale), this.isFacingBack)
     }
+    if(this.fpsCounter.update())
+      this.genericTTF.bakeText(this.fpsCounter.getText())
+    this.genericTTF.bind()
+    this.renderer.render2DQuad(
+      Position(this.videoSettings.width - this.genericTTF.getDimension().width - 10, 10),
+      this.genericTTF.getDimension())
   }
 
   override fun shutdown() {
+    this.genericTTF.load()
     this.warriorWalk.free()
     this.warriorIdle.free()
   }
