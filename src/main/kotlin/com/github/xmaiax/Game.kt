@@ -102,7 +102,7 @@ import org.springframework.beans.factory.annotation.Autowired
   }
 
   override fun shutdown() {
-    this.genericTTF.load()
+    this.genericTTF.free()
     this.warriorWalk.free()
     this.warriorIdle.free()
   }
