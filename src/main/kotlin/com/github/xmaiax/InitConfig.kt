@@ -69,7 +69,7 @@ fun initConfig(springApp: org.springframework.boot.SpringApplication, vararg arg
   val vsyncPanel = javax.swing.JPanel()
   val vsyncCheckbox = javax.swing.JCheckBox(
     InitConfigs.JAVA_UI_VSYNC_LABEL, InitConfigs.JAVA_UI_FLAG_VSYNC_DEFAULT)
-  vsyncCheckbox.setEnabled(false) //FIXME: Corrigir frame tracker estranho com o V-Sync desabilitado
+  vsyncCheckbox.setEnabled(false) //FIXME: Corrigir frame skip estranho com o V-Sync desabilitado
   vsyncPanel.add(vsyncCheckbox)
   panel.add(vsyncPanel)
   val debugModePanel = javax.swing.JPanel()

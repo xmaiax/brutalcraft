@@ -1,31 +1,39 @@
 package com.github.xmaiax
 
+import java.awt.Color
 import java.awt.Font
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30C.*
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 
 data class Position(var x: Int = 0, var y: Int = 0)
 data class Dimension(val width: Int = -1, val height: Int = -1) {
   fun isValid() = this.width > 0 && this.height > 0
   fun scaleUp(scale: Double) = Dimension(
     (this.width.toDouble() * scale).toInt(),
-    (this.height.toDouble() * scale).toInt())
-}
+    (this.height.toDouble() * scale).toInt()) }
 
-interface RenderableObject {
+abstract class RenderableObject(
+  private var glIdentifier: Int = -1,
+  private var data: java.nio.ByteBuffer? = null,
+  private var dimension: Dimension = Dimension()) {
   companion object {
     val LOAD_RESOURCE_BEFORE_USING = "Please load the resource before using it."
+    fun throwResourceNotLoadedException(): Nothing = throw App.exitWithError(
+      RenderableObject.LOAD_RESOURCE_BEFORE_USING)
   }
-  var glIdentifier: Int
-  var data: java.nio.ByteBuffer?
-  var dimension: Dimension
-  fun load(): Unit
+  fun getGLid() = this.glIdentifier
+  fun getData() = this.data
   fun getDimension(scale: Double? = null) = if(this.dimension.isValid())
       scale?.let { this.dimension.scaleUp(it) } ?: run { this.dimension }
-    else this.throwResourceNotLoadedException()
+    else RenderableObject.throwResourceNotLoadedException()
+  abstract fun load(): Unit
+  open fun free(): Unit = this.data?.let {
+    org.lwjgl.stb.STBImage.stbi_image_free(it) } ?: run { Unit }
   fun bind() = this.data?.let {
     glBindTexture(GL_TEXTURE_2D, this.glIdentifier)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
@@ -33,95 +41,64 @@ interface RenderableObject {
     glTexImage2D(
       GL_TEXTURE_2D, 0, GL_RGBA, this.dimension.width, this.dimension.height,
       0, GL_RGBA, GL_UNSIGNED_BYTE, it)
-  } ?: run { this.throwResourceNotLoadedException() }
-  fun free(): Unit = this.data?.let {
-    org.lwjgl.stb.STBImage.stbi_image_free(it) } ?: run { Unit }
-  fun throwResourceNotLoadedException(): Nothing = throw App.exitWithError(
-    RenderableObject.LOAD_RESOURCE_BEFORE_USING)
+  } ?: run { RenderableObject.throwResourceNotLoadedException() }
+  fun update(data: java.nio.ByteBuffer?, dimension: Dimension): RenderableObject {
+    if(this.glIdentifier == -1) this.glIdentifier = glGenTextures()
+    this.data = data
+    this.dimension = dimension
+    return this }
+  fun copyAsRenderableObject() = object: RenderableObject(
+    glIdentifier, data, dimension) { override fun load() = Unit }
 }
 
-data class TrueTypeFont(val resource: String): RenderableObject {
-  override var glIdentifier: Int = -1
-  override var data: java.nio.ByteBuffer? = null
-  override var dimension = Dimension()
+data class TrueTypeFont(val resource: String): RenderableObject() {
   private var font: Font? = null
   override fun load() {
     this.font = Font.createFont(Font.TRUETYPE_FONT,
-      App.getUrlFromResource(this.resource).openStream())
-  }
+      App.getUrlFromResource(this.resource).openStream()) }
   fun bakeText(text: String, fontSize: Float = 40.0f,
-      color: java.awt.Color = java.awt.Color.WHITE): TrueTypeFont {
+      color: Color = Color.WHITE): RenderableObject {
     var input = BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
     var graphics2d = input.createGraphics()
     fun setFontSize() = this.font?.let {
       graphics2d.setFont(it.deriveFont(Font.PLAIN, fontSize)) } ?: run {
-        super.throwResourceNotLoadedException()
-      }
+        RenderableObject.throwResourceNotLoadedException() }
     setFontSize()
     var metrics = graphics2d.getFontMetrics()
-    this.dimension = Dimension(metrics.stringWidth(text), metrics.getHeight())
+    val dimension = Dimension(metrics.stringWidth(text), metrics.getHeight())
     graphics2d.dispose()
-    input = BufferedImage(this.dimension.width, this.dimension.height, BufferedImage.TYPE_INT_ARGB)
+    input = BufferedImage(dimension.width, dimension.height, BufferedImage.TYPE_INT_ARGB)
     graphics2d = input.createGraphics()
-    graphics2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY)
-    graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-    graphics2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY)
-    graphics2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE)
-    graphics2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
-    graphics2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
-    graphics2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
-    graphics2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE)
     setFontSize()
     graphics2d.setColor(color)
     graphics2d.drawString(text, 0, graphics2d.getFontMetrics().getMaxAscent())
     graphics2d.dispose()
-    this.glIdentifier = glGenTextures()
     val baos = java.io.ByteArrayOutputStream()
     javax.imageio.ImageIO.write(input, ResourcesExtension.PNG.extension, baos)
-    this.data = org.lwjgl.stb.STBImage.stbi_load_from_memory(
+    return this.update(org.lwjgl.stb.STBImage.stbi_load_from_memory(
       App.createBufferFromInputStream(java.io.ByteArrayInputStream(baos.toByteArray())),
       BufferUtils.createIntBuffer(1), BufferUtils.createIntBuffer(1),
-        BufferUtils.createIntBuffer(1), 4)
-    return this.copy()
-  }
-}
+        BufferUtils.createIntBuffer(1), 4), dimension).copyAsRenderableObject() } }
 
-data class Texture2D(val resource: String): RenderableObject {
-  override var glIdentifier: Int = -1
-  override var data: java.nio.ByteBuffer? = null
-  override var dimension = Dimension()
+data class Texture2D(val resource: String): RenderableObject() {
   override fun load() {
-    this.glIdentifier = glGenTextures()
     val widthBuffer = BufferUtils.createIntBuffer(1)
     val heightBuffer = BufferUtils.createIntBuffer(1)
-    this.data = org.lwjgl.stb.STBImage.stbi_load_from_memory(
+    this.update(org.lwjgl.stb.STBImage.stbi_load_from_memory(
       App.getBufferFromResource(this.resource),
-      widthBuffer, heightBuffer, BufferUtils.createIntBuffer(1), 4)
-    this.dimension = Dimension(widthBuffer.get(), heightBuffer.get())
-  }
-}
+      widthBuffer, heightBuffer, BufferUtils.createIntBuffer(1), 4),
+        Dimension(widthBuffer.get(), heightBuffer.get())) } }
 
-data class Animation2D(val resourceFolder: String): RenderableObject {
-
-  companion object {
-    val JAR_FILE_ENTRY_PREFFIX_URL = "BOOT-INF/classes/"
-  }
-
-  override var glIdentifier: Int = -1
-  override var data: java.nio.ByteBuffer? = null
-  override var dimension = Dimension()
-
+data class Animation2D(val resourceFolder: String): RenderableObject() {
+  companion object { val JAR_FILE_ENTRY_PREFFIX_URL = "BOOT-INF/classes/" }
   private var textures2D: List<Texture2D> = listOf()
-
   override fun load(): Unit = Thread.currentThread().getContextClassLoader()
       .getResource(this.resourceFolder)?.let { url ->
     fun loadAllTexturesWithFileNames(files: List<String>) {
       this.textures2D = files.map { Texture2D("${this.resourceFolder}${it}") }
-      this.textures2D.forEach { it.load() }
-    }
+      this.textures2D.forEach { it.load() }}
     val dir = java.io.File(url.getFile())
-    if(dir.isDirectory())
-      loadAllTexturesWithFileNames(dir.listFiles().map { it.getName() })
+    if(dir.isDirectory()) loadAllTexturesWithFileNames(dir.listFiles().map { it.getName() })
     else {
       val zipIS = java.util.zip.ZipInputStream(App::class.java.getProtectionDomain()
         .getCodeSource().getLocation().openStream())
@@ -133,55 +110,34 @@ data class Animation2D(val resourceFolder: String): RenderableObject {
         it.startsWith(JAR_FILE_ENTRY_PREFFIX_URL + this.resourceFolder) &&
           !it.endsWith("/") }.map { it.substring(JAR_FILE_ENTRY_PREFFIX_URL.length).split("/").last() })
     }
-    this.textures2D.first().let {
-      this.glIdentifier = it.glIdentifier
-      this.data = it.data
-      this.dimension = it.getDimension()
-    }
+    this.textures2D.first().let { this.update(it.getData(), it.getDimension()) }
     return Unit
   } ?: run { throw App.exitWithError("Animation resource directory '${
     this.resourceFolder}' doesn't exists or is empty!") }
-
   fun update(msSinceLastUpdate: Long, animationIndex: Animation2DIndex) {
     animationIndex.msCounter += msSinceLastUpdate
     if(animationIndex.msCounter >= animationIndex.msUntilNextFrame) {
       animationIndex.msCounter -= animationIndex.msUntilNextFrame
       animationIndex.index += 1
     }
-    if(animationIndex.index >= this.textures2D.size)
-      animationIndex.index = 0
+    if(animationIndex.index >= this.textures2D.size) animationIndex.index = 0
     this.textures2D.get(animationIndex.index).let { text2D ->
-      this.glIdentifier = text2D.glIdentifier
-      this.data = text2D.data
-      this.dimension = text2D.dimension
-    }
-  }
-
-  override fun free() {
-    this.textures2D.forEach { it.free() }
-    this.textures2D = emptyList()
-  }
-}
+      this.update(text2D.getData(), text2D.getDimension()) }}
+  override fun free() { this.textures2D.forEach { it.free() }
+    this.textures2D = emptyList() } }
 
 data class Animation2DIndex(val msUntilNextFrame: Int,
     var msCounter: Long = 0, var index: Int = 0) {
-  fun reset() {
-    this.msCounter = 0
-    this.index = 0
-  }
-}
+  fun reset() { this.msCounter = 0
+    this.index = 0 } }
 
-@org.springframework.stereotype.Component
-class Renderer2D(
-  @org.springframework.beans.factory.annotation.Autowired
-  val videoSettings: VideoSettings
-) {
+@Component
+class Renderer2D(@Autowired val videoSettings: VideoSettings) {
   companion object {
     private val LOGGER = org.slf4j.LoggerFactory.getLogger(Renderer2D::class.java)
     val SHADER_ERROR_MESSAGE = "Couldn't compile shader"
     val DEFAULT_VERTEX_SHADER = "shaders/basic2d.vs"
-    val DEFAULT_FRAGMENT_SHADER = "shaders/basic2d.fs"
-  }
+    val DEFAULT_FRAGMENT_SHADER = "shaders/basic2d.fs" }
   var window = -1L
   private var program = -1
   private var programInputPosition = -1
@@ -275,3 +231,37 @@ class Renderer2D(
     glBindVertexArray(0)
   }
 }
+
+@Component
+class FPSCounter(
+    @Autowired val renderer: Renderer2D,
+    @Autowired val config: FPSCounterConfig): RenderableObject() {
+  data class FPSCounterConfig(val size: Float,
+    val color: Color, val topRightMargin: Int)
+  private var lastTime = System.currentTimeMillis()
+  private var currentText: String = "-"
+  private var frameCounter: Int = 0
+  private var msCounter: Long = 0
+  override fun load() = Unit
+  lateinit var font: TrueTypeFont
+  fun load(font: TrueTypeFont) { this.font = font }
+  private fun update(): Boolean {
+    this.msCounter += System.currentTimeMillis() - this.lastTime
+    this.lastTime = System.currentTimeMillis()
+    this.frameCounter++
+    if(this.msCounter >= 1000L) {
+      val newText = "FPS: ${this.frameCounter}"
+      this.frameCounter = 0
+      this.msCounter = 0L
+      if(!this.currentText.equals(newText)) {
+        this.currentText = newText
+        return true }}
+    return false }
+  fun render() {
+    if(this.update()) {
+      val bakedText = this.font.bakeText(this.currentText, this.config.size, this.config.color)
+      this.update(bakedText.getData(), bakedText.getDimension()) }
+    this.getData()?.let { this.bind()
+      renderer.render2DQuad(Position(
+        renderer.videoSettings.width - this.getDimension().width - this.config.topRightMargin,
+          this.config.topRightMargin), this.getDimension())}}}

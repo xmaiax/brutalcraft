@@ -191,7 +191,7 @@ open class App(
       Texture2D(this.appInfo.windowIconLocation).let { icon ->
         icon.load()
         val image = org.lwjgl.glfw.GLFWImage.malloc()
-        icon.data?.let {
+        icon.getData()?.let {
           image.set(icon.getDimension().width, icon.getDimension().height, it)
         }
         val imageBuffer = org.lwjgl.glfw.GLFWImage.malloc(1)
@@ -213,7 +213,7 @@ open class App(
     LOGGER.info("Engine is running.")
     var currentMs = java.util.Calendar.getInstance().getTimeInMillis()
     var previousPressedControllerKeys = listOf<InputedControllerKey>()
-    while (keepRunning) {
+    while (keepRunning)
       try {
         glfwGetJoystickButtons(GLFW_JOYSTICK_1)?.let { controllerInput ->
           val currentPressedControllerKeys = InputedControllerKey.values().filter {
@@ -261,7 +261,6 @@ open class App(
           else System.exit(-1)
         }
       }
-    }
     LOGGER.info("Thanks for playing! We hope to see you again!")
   }
 }

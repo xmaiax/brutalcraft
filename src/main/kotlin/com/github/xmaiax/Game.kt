@@ -1,10 +1,14 @@
 package com.github.xmaiax
 
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
+import org.springframework.context.annotation.Bean
 
-@org.springframework.stereotype.Component class Game(
-  @Autowired val renderer: Renderer2D
-): GameLifecycle {
+@org.springframework.context.annotation.Configuration open class GameConfigurations {
+  @Bean open fun fpsCounterConfigs() = FPSCounter.FPSCounterConfig(42.0f, java.awt.Color.WHITE, 8)
+}
+
+@Component class Game(@Autowired val renderer: Renderer2D): GameLifecycle {
 
   companion object {
     private val LOGGER = org.slf4j.LoggerFactory.getLogger(Game::class.java)
@@ -12,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired
 
   @Autowired lateinit var fpsCounter: FPSCounter
 
-  val genericTTF = TrueTypeFont("fonts/novem___.ttf")
+  val genericTTF = TrueTypeFont("fonts/GorgeousPixel.ttf")
 
   var isMoving = false
   var isFacingBack = false
@@ -37,15 +41,14 @@ import org.springframework.beans.factory.annotation.Autowired
       this.oldExampleText = "${curStrTime}"
       this.genericTTF.bakeText(this.oldExampleText)
       this.timeRenderableText?.let {
-        it.glIdentifier = this.genericTTF.glIdentifier
-        it.data = this.genericTTF.data
-        it.dimension = this.genericTTF.dimension
+        it.update(this.genericTTF.getData(), this.genericTTF.getDimension())
       }
     }
   }
 
   override fun load() {
     this.genericTTF.load()
+    this.fpsCounter.load(this.genericTTF)
     this.warriorWalk.load()
     this.warriorIdle.load()
   }
@@ -86,19 +89,19 @@ import org.springframework.beans.factory.annotation.Autowired
   override fun render() {
     (if(this.isMoving) this.warriorWalk else this.warriorIdle).let { currentAnimation ->
       currentAnimation.bind()
-      this.renderer.render2DQuad(Position(
+      this.renderer.render2DQuad(Position(currentAnimation.getDimension(this.warriorScale).width / 10
           -(if(this.isFacingBack) (this.warriorMirrorWidthCorrection * this.warriorScale).toInt() else 0) +
         this.renderer.videoSettings.width  / 2 - currentAnimation.getDimension(this.warriorScale).width / 2,
         this.renderer.videoSettings.height * 3 / 4 - currentAnimation.getDimension(this.warriorScale).height / 2),
           currentAnimation.getDimension(this.warriorScale), this.isFacingBack)
     }
 
-    this.timeRenderableText?.let { trt -> trt.data?.let { trt.bind()
+    this.timeRenderableText?.let { trt -> trt.getData()?.let { trt.bind()
       this.renderer.render2DQuad(Position(this.renderer.videoSettings.width / 2 - trt.getDimension().width / 2,
         this.renderer.videoSettings.height / 2 - trt.getDimension().height / 2), trt.getDimension())
       }} ?: run { this.timeRenderableText = this.genericTTF.copy() }
 
-    this.fpsCounter.render(this.genericTTF, this.renderer)
+    this.fpsCounter.render()
   }
 
   override fun shutdown() {
