@@ -6,35 +6,24 @@
   <groupId>com.github.xmaiax</groupId>
   <artifactId>brutalcraft</artifactId>
   <packaging>jar</packaging>
-  <version>mk-ii</version>
+  <version>mk3</version>
   <name>Brutalcraft</name>
-  <description>Simple game engine powered by Kotlin + LWJGL3 + Spring-Boot.</description>
+  <description>Simple game engine powered by Java + LWJGL3 + Spring-Boot.</description>
   <properties>
-    <jdk.version>1.8</jdk.version>
+    <jdk.version>11</jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maintainer.name>Maia</maintainer.name>
     <maintainer.email>felipe_m92@live.com</maintainer.email>
     <main.class>${project.groupId}.App</main.class>
     <output.directory>RELEASE/</output.directory>
-    <logging-pattern>[%-5p] %d{dd/MM/yyyy HH:mm:ss} %32c &lt;%3L&gt; %msg%n</logging-pattern>
-    <kotlin.version>1.3.61</kotlin.version>
-    <spring-boot.version>2.2.4.RELEASE</spring-boot.version>
-    <lwjgl.version>3.2.3</lwjgl.version>
-    <joml.version>1.9.25</joml.version>
+    <logging-pattern>[%-5p] %d{dd/MM/yyyy HH:mm:ss} %40c &lt;%3L&gt; %msg%n</logging-pattern>
+    <spring-boot.version>2.7.5</spring-boot.version>
+    <lwjgl.version>3.3.1</lwjgl.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
-    <download-maven-plugin.version>1.6.0</download-maven-plugin.version>
-    <launch4j.version>1.7.25</launch4j.version>
   </properties>
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-project</artifactId>
-        <version>${kotlin.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
@@ -55,44 +44,31 @@
     <profile>
       <id>Windows</id>
       <activation>
-        <os>
-          <family>windows</family>
-        </os>
+        <os><family>windows</family></os>
       </activation>
       <properties>
         <spring.profiles.active>windows</spring.profiles.active>
-        <binary.name>${project.artifactId}</binary.name>
-        <openjdk8.sha256>3e0639deb296f13b66dbc1ac7306cd2784cddc968bed32e703be520c6cbd7bc4</openjdk8.sha256>
-        <openjdk8.downloaded-extension>zip</openjdk8.downloaded-extension>
-        <generate-windows-bin.phase>package</generate-windows-bin.phase>
       </properties>
     </profile>
     <profile>
       <id>Linux</id>
       <activation>
-        <os>
-          <family>unix</family>
-        </os>
+        <os><family>unix</family></os>
       </activation>
       <properties>
         <spring.profiles.active>linux</spring.profiles.active>
-        <binary.name>${project.artifactId}-${project.version}</binary.name>
-        <openjdk8.sha256>a044da8bf198ad756b2bbb83f3d48ddeeffb934b9a9974d9b9bb6d0034413a83</openjdk8.sha256>
-        <openjdk8.downloaded-extension>tar.gz</openjdk8.downloaded-extension>
-        <generate-windows-bin.phase>none</generate-windows-bin.phase>
       </properties>
     </profile>
   </profiles>
   <build>
-    <finalName>../${output.directory}${binary.name}</finalName>
-    <sourceDirectory>src/main/kotlin</sourceDirectory>
+    <finalName>../${output.directory}${project.artifactId}-${spring.profiles.active}</finalName>
+    <sourceDirectory>src/main/java</sourceDirectory>
     <resources>
       <resource>
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
         <excludes>
           <exclude>**/*.ttf</exclude>
-          <exclude>**/*.ico</exclude>
         </excludes>
       </resource>
       <resource>
@@ -100,44 +76,10 @@
         <filtering>false</filtering>
         <includes>
           <include>**/*.ttf</include>
-          <include>**/*.ico</include>
         </includes>
       </resource>
     </resources>
     <plugins>
-      <plugin>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-maven-plugin</artifactId>
-        <version>${kotlin.version}</version>
-        <configuration>
-          <args>
-            <arg>-Xjsr305=strict</arg>
-          </args>
-          <compilerPlugins>
-            <plugin>spring</plugin>
-          </compilerPlugins>
-        </configuration>
-        <executions>
-          <execution>
-            <id>compile</id>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-maven-allopen</artifactId>
-            <version>${kotlin.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-maven-noarg</artifactId>
-            <version>${kotlin.version}</version>
-          </dependency>
-        </dependencies>
-      </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -165,108 +107,9 @@
           <target>${jdk.version}</target>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>com.googlecode.maven-download-plugin</groupId>
-        <artifactId>download-maven-plugin</artifactId>
-        <version>${download-maven-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>download-openjdk</id>
-            <phase>${generate-windows-bin.phase}</phase>
-            <goals>
-              <goal>wget</goal>
-            </goals>
-            <configuration>
-              <url>https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u275-b01/OpenJDK8U-jre_x64_${spring.profiles.active}_hotspot_8u275b01.${openjdk8.downloaded-extension}</url>
-              <outputFileName>openjdk8.${openjdk8.downloaded-extension}</outputFileName>
-              <outputDirectory>${output.directory}</outputDirectory>
-              <cacheDirectory>${output.directory}/../openjdk-cache</cacheDirectory>
-              <sha256>${openjdk8.sha256}</sha256>
-              <unpack>true</unpack>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>com.akathist.maven.plugins.launch4j</groupId>
-        <artifactId>launch4j-maven-plugin</artifactId>
-        <version>${launch4j.version}</version>
-        <executions>
-          <execution>
-            <id>create-windows-binary</id>
-            <phase>${generate-windows-bin.phase}</phase>
-            <goals>
-              <goal>launch4j</goal>
-            </goals>
-            <configuration>
-              <icon>windows-binary-icon.ico</icon>
-              <headerType>gui</headerType>
-              <outfile>${output.directory}${binary.name}.exe</outfile>
-              <jar>${output.directory}${binary.name}.jar</jar>
-              <jre>
-                <bundledJre64Bit>true</bundledJre64Bit>
-                <path>./jdk8u275-b01-jre</path>
-                <jdkPreference>jreOnly</jdkPreference>
-                <runtimeBits>64</runtimeBits>
-                <opts>-server -Xms512m -Xmx512m</opts>
-              </jre>
-              <versionInfo>
-                <productName>${project.name}</productName>
-                <internalName>${project.groupId}.${project.artifactId}</internalName>
-                <originalFilename>${project.artifactId}.exe</originalFilename>
-                <fileVersion>0.0.0.0</fileVersion>
-                <productVersion>0.0.0.0</productVersion>
-                <txtFileVersion>${project.version}</txtFileVersion>
-                <txtProductVersion>${project.version}</txtProductVersion>
-                <fileDescription>${project.description}</fileDescription>
-                <copyright>${maintainer.email}</copyright>
-              </versionInfo>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <version>${maven-clean-plugin.version}</version>
-        <configuration>
-          <followSymlinks>false</followSymlinks>
-          <filesets>
-            <fileset>
-              <directory>${output.directory}</directory>
-              <includes>
-                <include>*.jar</include>
-                <include>*.jar.original</include>
-              </includes>
-            </fileset>
-            <fileset>
-              <directory>${basedir}/</directory>
-              <includes>
-                <include>*.log</include>
-              </includes>
-            </fileset>
-          </filesets>
-        </configuration>
-        <executions>
-          <execution>
-            <id>delete-jars</id>
-            <phase>${generate-windows-bin.phase}</phase>
-            <goals>
-              <goal>clean</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
   <dependencies>
-    <dependency>
-      <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-stdlib-jdk8</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-reflect</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
