@@ -1,4 +1,4 @@
-package com.github.xmaiax;
+package com.github.xmaiax.game;
 
 import java.awt.Color;
 
