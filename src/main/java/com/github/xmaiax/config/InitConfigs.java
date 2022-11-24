@@ -67,7 +67,7 @@ public class InitConfigs {
   private static ImageIcon getImageIconFromProperty(Map<String, String> applicationProperties, String property) {
     final String imageResourceLocation = applicationProperties.get(property);
     if(imageResourceLocation == null || imageResourceLocation.isBlank()) return null;
-    return new ImageIcon(Thread.currentThread().getContextClassLoader().getResource(imageResourceLocation));
+    return new ImageIcon(Thread.currentThread().getContextClassLoader().getResource(imageResourceLocation.trim()));
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked", })

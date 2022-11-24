@@ -218,7 +218,8 @@ public class App implements org.springframework.boot.CommandLineRunner {
   }
 
   public static URL getUrlFromResource(String resource) {
-    final URL url = Thread.currentThread().getContextClassLoader().getResource(resource);
+    if(resource == null || resource.isBlank()) throw exitWithError("Invalid resource given!");
+    final URL url = Thread.currentThread().getContextClassLoader().getResource(resource.trim());
     if(url == null) throw exitWithError("Resource not found: ".concat(resource));
     final ResourcesExtension type = ResourcesExtension.fromFileName(resource);
     if(!ResourcesExtension.CONFIGURATION.equals(type))
