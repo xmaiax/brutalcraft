@@ -36,7 +36,7 @@ public class Player {
   private boolean facingBack = false;
   public boolean isFacingBack() { return this.facingBack; }
 
-  private static final double SCALE = 5.0d;
+  private static final double SCALE = 4.0d;
   private static final int MIRROR_WIDTH_CORRECTION = 12;
 
   public void load() {

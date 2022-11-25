@@ -29,7 +29,7 @@ public class GameLogic implements com.github.xmaiax.renderer.GameLifecycle {
   @Override public void load() {
     this.genericTTF.load();
     this.fpsCounter.load(this.genericTTF);
-    this.parallaxBackground.load();
+    this.parallaxBackground.load(this.renderer2D.getVideoSettings());
     this.player.load();
   }
 
