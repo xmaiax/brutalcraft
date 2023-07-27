@@ -17,8 +17,8 @@
     <main.class>${project.groupId}.App</main.class>
     <output.directory>RELEASE/</output.directory>
     <logging-pattern>[%-5p] %d{dd/MM/yyyy HH:mm:ss} %40c &lt;%3L&gt; %msg%n</logging-pattern>
-    <spring-boot.version>2.7.5</spring-boot.version>
-    <lwjgl.version>3.3.1</lwjgl.version>
+    <spring-boot.version>2.7.14</spring-boot.version>
+    <lwjgl.version>3.3.2</lwjgl.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
   </properties>

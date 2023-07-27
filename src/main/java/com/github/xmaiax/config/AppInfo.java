@@ -4,6 +4,21 @@ import org.springframework.beans.factory.annotation.Value;
 
 @org.springframework.stereotype.Component public class AppInfo {
 
+  @org.springframework.beans.factory.annotation.Autowired public AppInfo(
+      @Value("${app.info.release-version}") String releaseVersion,
+      @Value("${app.info.spring-boot-version}") String springBootVersion,
+      @Value("${app.info.lwjgl-version}") String lwjglVersion,
+      @Value("${app.info.welcome-message}") String welcomeMessage,
+      @Value("${app.info.hide-mouse-cursor}") boolean hideMouseCursor,
+      @Value("${app.info.window-icon-location}") String windowIconLocation) {
+    this.releaseVersion = releaseVersion;
+    this.springBootVersion = springBootVersion;
+    this.lwjglVersion = lwjglVersion;
+    this.welcomeMessage = welcomeMessage;
+    this.hideMouseCursor = hideMouseCursor;
+    this.windowIconLocation = windowIconLocation;
+  }
+
   private String releaseVersion;
   public String getReleaseVersion() { return this.releaseVersion; }
 
@@ -21,20 +36,5 @@ import org.springframework.beans.factory.annotation.Value;
 
   private String windowIconLocation;
   public String getWindowIconLocation() { return this.windowIconLocation; }
-
-  @org.springframework.beans.factory.annotation.Autowired public AppInfo(
-      @Value("${app.info.release-version}") String releaseVersion,
-      @Value("${app.info.spring-boot-version}") String springBootVersion,
-      @Value("${app.info.lwjgl-version}") String lwjglVersion,
-      @Value("${app.info.welcome-message}") String welcomeMessage,
-      @Value("${app.info.hide-mouse-cursor}") boolean hideMouseCursor,
-      @Value("${app.info.window-icon-location}") String windowIconLocation) {
-    this.releaseVersion = releaseVersion;
-    this.springBootVersion = springBootVersion;
-    this.lwjglVersion = lwjglVersion;
-    this.welcomeMessage = welcomeMessage;
-    this.hideMouseCursor = hideMouseCursor;
-    this.windowIconLocation = windowIconLocation;
-  }
 
 }
