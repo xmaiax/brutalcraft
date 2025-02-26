@@ -25,12 +25,12 @@ public enum InputedControllerKey {
   private InputedKey key;
   public InputedKey getKey() { return this.key; }
 
-  private InputedControllerKey(int position, InputedKey key) {
+  private InputedControllerKey(final int position, final InputedKey key) {
     this.position = position;
     this.key = key;
   }
 
-  public InputedAction getInputedAction(InputEvent event) {
+  public InputedAction getInputedAction(final InputEvent event) {
     return new InputedAction(this.key, event);
   }
 

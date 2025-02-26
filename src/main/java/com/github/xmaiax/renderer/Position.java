@@ -1,13 +1,15 @@
 package com.github.xmaiax.renderer;
 
+import java.math.BigInteger;
+
 public class Position {
 
   public Position() {
-    this.x = 0;
-    this.y = 0;
+    this.x = BigInteger.ZERO.intValue();
+    this.y = BigInteger.ZERO.intValue();
   }
 
-  public Position(int x, int y) {
+  public Position(final int x, final int y) {
     this.x = x;
     this.y = y;
   }
@@ -15,11 +17,11 @@ public class Position {
   private int x;
   public int getX() { return this.x; }
   public Position setX(int x) {
-    this.x = x; return this; }
+    this.x = Integer.valueOf(x); return this; }
 
   private int y;
   public int getY() { return this.y; }
   public Position setY(int y) {
-    this.y = y; return this; }
+    this.y = Integer.valueOf(y); return this; }
 
 }

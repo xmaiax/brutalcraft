@@ -142,18 +142,18 @@ public enum InputedKey {
 
   ;
 
-  private String alias;
+  private final String alias;
   @Override public String toString() { return this.alias; }
 
-  private int glfwCode;
+  private final int glfwCode;
   public int getGlfwCode() { return this.glfwCode; }
 
-  private InputedKey(String alias, int glfwCode) {
+  private InputedKey(final String alias, final int glfwCode) {
     this.alias = alias;
     this.glfwCode = glfwCode;
   }
 
-  public static InputedKey fromCode(int code) {
+  public static InputedKey fromCode(final int code) {
     return java.util.Arrays.asList(InputedKey.values()).stream()
       .filter(ik -> ik.getGlfwCode() == code)
         .findFirst().orElse(null);

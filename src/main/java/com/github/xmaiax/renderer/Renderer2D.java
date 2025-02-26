@@ -4,6 +4,8 @@ import static org.lwjgl.opengl.GL30C.*;
 
 import com.github.xmaiax.App;
 import com.github.xmaiax.config.VideoSettings;
+
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import org.lwjgl.BufferUtils;
@@ -17,33 +19,33 @@ import org.lwjgl.PointerBuffer;
   private static final String  DEFAULT_VERTEX_SHADER = "shaders/basic2d.vs";
   private static final String  DEFAULT_FRAGMENT_SHADER = "shaders/basic2d.fs";
 
-  private VideoSettings videoSettings;
+  private final VideoSettings videoSettings;
   public VideoSettings getVideoSettings() { return this.videoSettings; }
 
   @org.springframework.beans.factory.annotation.Autowired
-  public Renderer2D(VideoSettings videoSettings) {
+  public Renderer2D(final VideoSettings videoSettings) {
     this.videoSettings = videoSettings;
   }
 
   private int program = Integer.MIN_VALUE;
-  private int  programInputPosition;
-  private int  programInputTextureCoordinates;
-  private int  programInputAlpha;
+  private int programInputPosition;
+  private int programInputTextureCoordinates;
+  private int programInputAlpha;
 
-  private int createShader(String resource, int type) {
+  private int createShader(final String resource, final int type) {
     final ByteBuffer source = App.getBufferFromResource(resource);
     final int shader = glCreateShader(type);
     final PointerBuffer strings = BufferUtils.createPointerBuffer(1);
-    strings.put(0, source);
+    strings.put(BigInteger.ZERO.intValue(), source);
     final IntBuffer lengths = BufferUtils.createIntBuffer(1);
-    lengths.put(0, source.remaining());
+    lengths.put(BigInteger.ZERO.intValue(), source.remaining());
     glShaderSource(shader, strings, lengths);
     glCompileShader(shader);
     final int compiled = glGetShaderi(shader, GL_COMPILE_STATUS);
     final String shaderLog = glGetShaderInfoLog(shader);
     LOGGER.info("Shader '{}' log: {}", resource, shaderLog == null || shaderLog.isBlank() ?
       "No errors or warnings found." : shaderLog);
-    if(compiled == 0) throw App.exitWithError(SHADER_ERROR_MESSAGE);
+    if(compiled == BigInteger.ZERO.intValue()) throw App.exitWithError(SHADER_ERROR_MESSAGE);
     return shader;
   }
 
@@ -57,10 +59,10 @@ import org.lwjgl.PointerBuffer;
     final int linked = glGetProgrami(this.program, GL_LINK_STATUS);
     final String programInfoLog = glGetProgramInfoLog(this.program);
     if(programInfoLog != null && !programInfoLog.isBlank()) LOGGER.warn(programInfoLog);
-    if(linked == 0) throw App.exitWithError("Couldn't link program");
+    if(linked == BigInteger.ZERO.intValue()) throw App.exitWithError("Couldn't link program");
     glUseProgram(this.program);
     final int texLocation = glGetUniformLocation(this.program, "_texture");
-    glUniform1i(texLocation, 0);
+    glUniform1i(texLocation, BigInteger.ZERO.intValue());
     this.programInputPosition = glGetAttribLocation(this.program, "position");
     this.programInputTextureCoordinates = glGetAttribLocation(this.program, "textureCoordinates");
     this.programInputAlpha = glGetAttribLocation(this.program, "alpha");
@@ -69,8 +71,10 @@ import org.lwjgl.PointerBuffer;
 
   private void setFloatVariableToShader(float[] value, int programAttributeLocation) {
     glBindBuffer(GL_ARRAY_BUFFER, glGenBuffers());
-    glBufferData(GL_ARRAY_BUFFER, BufferUtils.createFloatBuffer(value.length).put(value).flip(), GL_STATIC_DRAW);
-    glVertexAttribPointer(programAttributeLocation, 2, GL_FLOAT, true, 0, 0);
+    glBufferData(GL_ARRAY_BUFFER, BufferUtils.createFloatBuffer(value.length)
+      .put(value).flip(), GL_STATIC_DRAW);
+    glVertexAttribPointer(programAttributeLocation, BigInteger.TWO.intValue(), GL_FLOAT,
+      Boolean.TRUE, BigInteger.ZERO.intValue(), BigInteger.ZERO.intValue());
     glEnableVertexAttribArray(programAttributeLocation);
   }
 
@@ -81,12 +85,13 @@ import org.lwjgl.PointerBuffer;
     0.0f, 0.0f, 1.0f,
   };
 
-  public void render2DQuad(Position position, Dimension dimension, boolean horizontalInvert, Double alpha) {
+  public void render2DQuad(final Position position, final Dimension dimension,
+      final Boolean horizontalInvert, final Double alpha) {
     glBindVertexArray(glGenVertexArrays());
-    final Float sizeX = (dimension.getWidth() * 2.0f) / this.videoSettings.getWidth();
-    final Float sizeY = (dimension.getHeight() * 2.0f) / this.videoSettings.getHeight();
-    final Float startingPositionX = (2.0f * position.getX() - this.videoSettings.getWidth()) / this.videoSettings.getWidth();
-    final Float startingPositionY = (2.0f * position.getY() - this.videoSettings.getHeight()) / this.videoSettings.getHeight() + sizeY;
+    final Float sizeX = (dimension.getWidth() * BigInteger.TWO.floatValue()) / this.videoSettings.getWidth();
+    final Float sizeY = (dimension.getHeight() * BigInteger.TWO.floatValue()) / this.videoSettings.getHeight();
+    final Float startingPositionX = (BigInteger.TWO.floatValue() * position.getX() - this.videoSettings.getWidth()) / this.videoSettings.getWidth();
+    final Float startingPositionY = (BigInteger.TWO.floatValue() * position.getY() - this.videoSettings.getHeight()) / this.videoSettings.getHeight() + sizeY;
     this.setFloatVariableToShader(horizontalInvert ? new float[] {
       startingPositionX + sizeX, -startingPositionY, startingPositionX,
       -startingPositionY, startingPositionX, -startingPositionY + sizeY,
@@ -105,9 +110,10 @@ import org.lwjgl.PointerBuffer;
       alpha.floatValue(), alpha.floatValue(), alpha.floatValue(),
       alpha.floatValue(), alpha.floatValue(), alpha.floatValue(),
     }, this.programInputAlpha);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, BigInteger.ZERO.intValue());
+    glDrawArrays(GL_TRIANGLES, BigInteger.ZERO.intValue(),
+      BigInteger.TWO.intValue() + BigInteger.TWO.intValue() + BigInteger.TWO.intValue());
+    glBindVertexArray(BigInteger.ZERO.intValue());
   }
 
 }

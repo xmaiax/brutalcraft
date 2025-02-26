@@ -2,9 +2,9 @@ package com.github.xmaiax.renderer;
 
 import static org.lwjgl.opengl.GL30C.*;
 
-public abstract class RenderableObject {
+import java.math.BigInteger;
 
-  public static final String LOAD_RESOURCE_BEFORE_USING = "Please load the resource before using it.";
+public abstract class RenderableObject {
 
   private int glIdentifier = Integer.MIN_VALUE;
   public int getGLidentifier() { return this.glIdentifier; }
@@ -13,7 +13,7 @@ public abstract class RenderableObject {
   public java.nio.ByteBuffer getData() { return this.data; }
 
   public static void throwResourceNotLoadedException() {
-    throw com.github.xmaiax.App.exitWithError(LOAD_RESOURCE_BEFORE_USING);
+    throw com.github.xmaiax.App.exitWithError("Please load the resource before using it.");
   }
 
   private Dimension dimension = new Dimension();
@@ -22,11 +22,8 @@ public abstract class RenderableObject {
       throwResourceNotLoadedException();
     return this.dimension;
   }
-  protected void setDimension(Dimension dimension) { this.dimension = dimension; }
-
-  public Dimension getDimension(Double scale) {
-    return this.getDimension().scaleUp(scale);
-  }
+  public Dimension getDimension(final Double scale) { return this.getDimension().scaleUp(scale); }
+  protected void setDimension(final Dimension dimension) { this.dimension = dimension; }
 
   abstract public void load();
 
@@ -41,14 +38,14 @@ public abstract class RenderableObject {
       glBindTexture(GL_TEXTURE_2D, this.glIdentifier);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-        this.dimension.getWidth(), this.dimension.getHeight(), 0,
+      glTexImage2D(GL_TEXTURE_2D, BigInteger.ZERO.intValue(), GL_RGBA,
+        this.dimension.getWidth(), this.dimension.getHeight(), BigInteger.ZERO.intValue(),
           GL_RGBA, GL_UNSIGNED_BYTE, this.data);
     }
     else throwResourceNotLoadedException();
   }
 
-  protected RenderableObject update(java.nio.ByteBuffer data, Dimension dimension) {
+  protected RenderableObject update(final java.nio.ByteBuffer data, final Dimension dimension) {
     this.glIdentifier = this.glIdentifier == Integer.MIN_VALUE ? glGenTextures() : this.glIdentifier;
     this.data = data;
     this.dimension = dimension;

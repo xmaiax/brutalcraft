@@ -1,19 +1,21 @@
 package com.github.xmaiax.input;
 
+import java.math.BigInteger;
+
 public class InputedAction {
 
-  private InputedKey key;
+  private final InputedKey key;
   public InputedKey getKey() { return this.key; }
 
-  private InputEvent event;
+  private final InputEvent event;
   public InputEvent getEvent() { return this.event; }
 
-  public InputedAction(InputedKey key, InputEvent event) {
+  public InputedAction(final InputedKey key, final InputEvent event) {
     this.key = key;
     this.event = event;
   }
 
-  public InputedAction(int inputKey, int keyEvent) {
+  public InputedAction( final int inputKey, final int keyEvent) {
     this.key = InputedKey.fromCode(inputKey);
     this.event = InputEvent.fromCode(keyEvent);
   }
@@ -21,15 +23,17 @@ public class InputedAction {
   @Override public String toString() { return String.format("%s -> %s", this.event, this.key); }
 
   @Override public int hashCode() {
-    return (this.getKey() != null ? this.getKey().hashCode() : 0) +
-           (this.getEvent() != null ? this.getEvent().hashCode() : 0);
+    return (this.getKey() != null ? this.getKey().hashCode() : BigInteger.ZERO.intValue()) +
+           (this.getEvent() != null ? this.getEvent().hashCode() : BigInteger.ZERO.intValue());
   }
 
-  @Override public boolean equals(Object _obj) {
-    if(!(_obj instanceof InputedAction)) return false;
+  @Override public boolean equals(final Object _obj) {
+    if(!(_obj instanceof InputedAction)) return Boolean.FALSE;
     final InputedAction obj = (InputedAction) _obj;
-    return ((obj.getEvent() == null && this.getEvent() == null) || (this.getEvent() != null && this.getEvent().equals(obj.getEvent()))) &&
-           ((obj.getKey() == null && this.getKey() == null) || (this.getKey() != null && this.getKey().equals(obj.getKey())));
+    return ((obj.getEvent() == null && this.getEvent() == null) ||
+           (this.getEvent() != null && this.getEvent().equals(obj.getEvent()))) &&
+           ((obj.getKey() == null && this.getKey() == null) || 
+           (this.getKey() != null && this.getKey().equals(obj.getKey())));
   }
 
 }
